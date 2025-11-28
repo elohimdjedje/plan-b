@@ -1,5 +1,6 @@
 
 ###> symfony/framework-bundle ###
+/.env
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -31,3 +32,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Backup files (ne jamais commiter)
+*.backup
+*.bak
+*.clean.*
+*.old
+*.tmp

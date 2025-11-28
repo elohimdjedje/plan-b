@@ -11,14 +11,29 @@ planb-backend/var/sessions/
 planb-backend/var/tmp/
 
 # Environment (NE PAS PARTAGER - contient des secrets)
+planb-backend/.env
 planb-backend/.env.local
 planb-backend/.env.*.local
+planb-frontend/.env
+planb-frontend/.env.local
+planb-frontend/.env.*.local
+planb-mobile/.env
+planb-mobile/.env.local
+planb-mobile/.env.*.local
 
 # Uploads (images utilisateur - à exclure pour alléger)
 planb-backend/public/uploads/
 
 # JWT Keys (À REGÉNÉRER par chaque développeur)
 planb-backend/config/jwt/*.pem
+
+# Backup & Fichiers temporaires de développement
+*.backup
+*.bak
+*.clean.*
+*.old
+*~
+.backup/
 
 # === FRONTEND (React + Vite) ===
 

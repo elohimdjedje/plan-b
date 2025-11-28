@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Rfc\RFC2104TokenGenerator;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -33,9 +36,15 @@ class AuthController extends AbstractController
     ) {
     }
 
-    #[Route('/send-otp', name: 'auth_send_otp', methods: ['POST'])]
-    public function sendOTP(Request $request): JsonResponse
+#[Route('/send-otp', name: 'auth_send_otp', methods: ['POST'])]
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function sendOTP(Request $request, RateLimiterFactory $loginLimiter): JsonResponse
     {
+        $limiter = $loginLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Trop de tentatives. Réessayez dans 10 minutes.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
         $data = json_decode($request->getContent(), true);
         $phone = $data['phone'] ?? null;
 
@@ -129,8 +138,14 @@ class AuthController extends AbstractController
     }
 
     #[Route('/login', name: 'auth_login', methods: ['POST'])]
-    public function login(Request $request): JsonResponse
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function login(Request $request, RateLimiterFactory $loginLimiter): JsonResponse
     {
+        $limiter = $loginLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Trop de tentatives de connexion. Réessayez dans 15 minutes.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
         $data = json_decode($request->getContent(), true);
         
         $username = $data['username'] ?? $data['email'] ?? null;
@@ -180,8 +195,14 @@ class AuthController extends AbstractController
     }
 
     #[Route('/register', name: 'auth_register', methods: ['POST'])]
-    public function register(Request $request): JsonResponse
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function register(Request $request, RateLimiterFactory $registerLimiter): JsonResponse
     {
+        $limiter = $registerLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Trop d\'inscriptions. Veuillez réessayer après 1 heure.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
         $data = json_decode($request->getContent(), true);
 
         // Champs requis simplifiés : email, password, firstName, lastName

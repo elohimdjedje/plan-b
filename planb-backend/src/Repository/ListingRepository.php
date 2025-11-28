@@ -16,6 +16,9 @@ class ListingRepository extends ServiceEntityRepository
     public function findActiveListings(int $limit = 20, ?string $lastId = null): array
     {
         $qb = $this->createQueryBuilder('l')
+            ->leftJoin('l.owner', 'owner')
+            ->leftJoin('l.images', 'images')
+            ->addSelect('owner', 'images')
             ->where('l.status = :status')
             ->andWhere('l.expiresAt > :now')
             ->setParameter('status', 'active')
@@ -34,6 +37,9 @@ class ListingRepository extends ServiceEntityRepository
     public function searchListings(array $filters, int $limit = 20): array
     {
         $qb = $this->createQueryBuilder('l')
+            ->leftJoin('l.owner', 'owner')
+            ->leftJoin('l.images', 'images')
+            ->addSelect('owner', 'images')
             ->where('l.status = :status')
             ->setParameter('status', 'active');
 

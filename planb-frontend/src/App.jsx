@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import LoadingScreen from './components/common/LoadingScreen';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import SplashScreen from './components/animations/SplashScreen';
 import RequireAuth from './components/auth/RequireAuth';
 import { initializeSubscription } from './utils/subscription';
@@ -44,20 +45,21 @@ function App() {
   }
 
   return (
-    <Router>
-      <Toaster 
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 107, 53, 0.2)',
-          },
-        }}
-      />
-      
-      <Suspense fallback={<LoadingScreen />}>
+    <ErrorBoundary>
+      <Router>
+        <Toaster 
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 107, 53, 0.2)',
+            },
+          }}
+        />
+        
+        <Suspense fallback={<LoadingScreen />}>
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<Home />} />
@@ -87,7 +89,8 @@ function App() {
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         </Routes>
       </Suspense>
-    </Router>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

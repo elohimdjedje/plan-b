@@ -120,7 +120,7 @@ class ImageUploadService
     }
 
     /**
-     * Valider l'image
+     * Valider l'image avec vérifications strictes anti-corruption
      */
     private function validateImage(UploadedFile $file): void
     {
@@ -130,10 +130,82 @@ class ImageUploadService
             throw new \Exception('Image trop volumineuse (max 5 MB)');
         }
 
+        // Vérifier que le fichier n'est pas vide
+        if ($file->getSize() === 0) {
+            throw new \Exception('Le fichier est vide');
+        }
+
         // Types autorisés
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!in_array($file->getMimeType(), $allowedMimes)) {
+        $detectedMime = $file->getMimeType();
+        if (!in_array($detectedMime, $allowedMimes)) {
             throw new \Exception('Format d\'image non autorisé (JPG, PNG, WebP, GIF uniquement)');
+        }
+
+        // Vérification anti-corruption des magic bytes
+        $this->validateImageSignature($file->getPathname(), $detectedMime);
+
+        // Vérifier l'extension du fichier
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, $allowedExtensions)) {
+            throw new \Exception('Extension de fichier non autorisée');
+        }
+
+        // Vérifier que c'est une vraie image
+        $imageInfo = @getimagesize($file->getPathname());
+        if ($imageInfo === false) {
+            throw new \Exception('Le fichier n\'est pas une image valide ou est corrompu');
+        }
+
+        // Vérifier les dimensions minimales et maximales
+        $minWidth = 300;
+        $minHeight = 300;
+        $maxWidth = 10000;
+        $maxHeight = 10000;
+
+        if ($imageInfo[0] < $minWidth || $imageInfo[1] < $minHeight) {
+            throw new \Exception("Les dimensions minimales sont {$minWidth}x{$minHeight}px");
+        }
+
+        if ($imageInfo[0] > $maxWidth || $imageInfo[1] > $maxHeight) {
+            throw new \Exception("Les dimensions maximales sont {$maxWidth}x{$maxHeight}px");
+        }
+    }
+
+    /**
+     * Valider la signature du fichier image (magic bytes)
+     * Détecte les fichiers corruptus ou manipulés
+     */
+    private function validateImageSignature(string $filePath, string $mimeType): void
+    {
+        $fileContent = file_get_contents($filePath, false, null, 0, 12);
+        if ($fileContent === false) {
+            throw new \Exception('Impossible de lire le fichier');
+        }
+
+        // Vérifier les signatures de fichier (magic bytes)
+        $validSignatures = [
+            'image/jpeg' => ["\xFF\xD8\xFF"],
+            'image/png' => ["\x89PNG\r\n\x1a\n"],
+            'image/gif' => ["GIF87a", "GIF89a"],
+            'image/webp' => ["RIFF", "WEBP"],
+        ];
+
+        if (!isset($validSignatures[$mimeType])) {
+            throw new \Exception('Type MIME non vérifié');
+        }
+
+        $hasValidSignature = false;
+        foreach ($validSignatures[$mimeType] as $signature) {
+            if (strpos($fileContent, $signature) === 0) {
+                $hasValidSignature = true;
+                break;
+            }
+        }
+
+        if (!$hasValidSignature) {
+            throw new \Exception('Le fichier semble corrompu ou manipulé (signature invalide)');
         }
     }
 

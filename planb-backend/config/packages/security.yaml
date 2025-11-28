@@ -3,7 +3,7 @@ security:
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
             algorithm: auto
-            cost: 4  # Rapide pour dev (augmenter à 12-13 en production)
+            cost: 12  # Production - Sécurité renforcée (était 4)
 
     # Provider pour charger les utilisateurs
     providers:
@@ -59,6 +59,6 @@ when@test:
         password_hashers:
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
                 algorithm: auto
-                cost: 4
+                cost: 4  # Test - Performance (inchangé)
                 time_cost: 3
                 memory_cost: 10
