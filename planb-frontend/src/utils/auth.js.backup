@@ -1,0 +1,216 @@
+/**
+ * Utilitaires d'authentification - VERSION PRODUCTION
+ * Utilise le backend via JWT
+ */
+
+import api from '../api/axios';
+
+/**
+ * Inscription d'un nouvel utilisateur
+ * @param {Object} userData - Données utilisateur
+ * @returns {Promise<Object>}
+ */
+export const register = async (userData) => {
+  try {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Connexion utilisateur
+ * @param {string} username - Email
+ * @param {string} password - Mot de passe
+ * @returns {Promise<string>} JWT token
+ */
+export const login = async (username, password) => {
+  try {
+    const response = await api.post('/auth/login', { username, password });
+    const token = response.data.token;
+    
+    // Sauvegarder le token
+    localStorage.setItem('token', token);
+    
+    // Récupérer les infos user depuis /auth/me
+    const userResponse = await api.get('/auth/me');
+    const user = userResponse.data;
+    
+    // Mettre à jour le store zustand
+    if (typeof window !== 'undefined' && window.useAuthStore) {
+      const { login: storeLogin } = window.useAuthStore.getState();
+      const userData = {
+        ...user,
+        accountType: user.accountType || 'FREE',
+        isPro: user.isPro || false,
+      };
+      storeLogin(userData, token);
+    }
+    
+    return token;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Récupérer l'utilisateur connecté
+ * @returns {Promise<Object|null>}
+ */
+export const getCurrentUser = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    const response = await api.get('/auth/me');
+    return response.data;
+  } catch (error) {
+    // Gestion silencieuse de l'erreur
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+    }
+    return null;
+  }
+};
+
+/**
+ * Obtenir le profil utilisateur (alias de getCurrentUser)
+ * @returns {Promise<Object|null>}
+ */
+export const getUserProfile = async () => {
+  return await getCurrentUser();
+};
+
+/**
+ * Vérifier si l'utilisateur est connecté
+ * @returns {boolean}
+ */
+export const isAuthenticated = () => {
+  return !!localStorage.getItem('token');
+};
+
+/**
+ * Déconnexion
+ */
+export const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user'); // Par sécurité
+  window.location.href = '/auth';
+};
+
+/**
+ * Mettre à jour le profil utilisateur
+ * @param {Object} updates - Mises à jour
+ * @returns {Promise<Object>}
+ */
+export const updateUserProfile = async (updates) => {
+  try {
+    const response = await api.put('/auth/update-profile', updates);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Changer le mot de passe
+ * @param {string} currentPassword
+ * @param {string} newPassword
+ * @returns {Promise<void>}
+ */
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    await api.put('/users/password', { currentPassword, newPassword });
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Vérifier si l'utilisateur est propriétaire d'une annonce (asynchrone)
+ * @param {Object} listing - Annonce
+ * @param {Object|null} user - Utilisateur (optionnel)
+ * @returns {Promise<boolean>}
+ */
+export const isListingOwner = async (listing, user = null) => {
+  if (!listing) return false;
+  
+  const currentUser = user || await getCurrentUser();
+  if (!currentUser?.id) return false;
+  
+  const listingOwnerId = listing.userId || listing.user?.id;
+  return String(listingOwnerId) === String(currentUser.id);
+};
+
+/**
+ * Vérifier si l'utilisateur est propriétaire d'une annonce (synchrone)
+ * @param {Object} listing - Annonce
+ * @param {Object|null} user - Utilisateur connecté
+ * @returns {boolean}
+ */
+export const isListingOwnerSync = (listing, user) => {
+  if (!listing || !user?.id) return false;
+  
+  const listingOwnerId = listing.userId || listing.user?.id;
+  return String(listingOwnerId) === String(user.id);
+};
+
+/**
+ * Supprimer son compte
+ * @param {string} password - Mot de passe de confirmation
+ * @returns {Promise<void>}
+ */
+export const deleteAccount = async (password) => {
+  try {
+    await api.delete('/users/account', { data: { password } });
+    logout();
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Sauvegarder le profil utilisateur (alias de updateUserProfile)
+ * @param {Object} profile - Profil à sauvegarder
+ * @returns {Promise<Object>}
+ */
+export const saveUserProfile = async (profile) => {
+  return await updateUserProfile(profile);
+};
+
+/**
+ * Définir l'utilisateur courant (pour compatibilité)
+ * @param {Object} user - Utilisateur
+ */
+export const setCurrentUser = (user) => {
+  if (user && user.token) {
+    localStorage.setItem('token', user.token);
+  }
+};
+
+/**
+ * Supprimer l'utilisateur courant (alias de logout)
+ */
+export const removeCurrentUser = () => {
+  logout();
+};
+
+/**
+ * Créer un utilisateur démo (pour développement)
+ * @returns {Object}
+ */
+export const createDemoUser = () => {
+  const demoUser = {
+    id: 'demo-' + Date.now(),
+    email: 'demo@planb.ci',
+    firstName: 'Utilisateur',
+    lastName: 'Démo',
+    accountType: 'FREE',
+    isPro: false,
+    token: 'demo-token-' + Date.now()
+  };
+  
+  setCurrentUser(demoUser);
+  return demoUser;
+};

@@ -1,0 +1,165 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\User;
+use App\Repository\ConversationRepository;
+use App\Repository\ListingRepository;
+use App\Repository\MessageRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Route('/api/v1/conversations')]
+class ConversationController extends AbstractController
+{
+    public function __construct(
+        private ConversationRepository $conversationRepository,
+        private MessageRepository $messageRepository,
+        private ListingRepository $listingRepository
+    ) {
+    }
+
+    #[Route('', name: 'conversations_list', methods: ['GET'])]
+    public function list(): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $conversations = $this->conversationRepository->findByUser($user);
+
+        $data = array_map(function ($conversation) use ($user) {
+            $listing = $conversation->getListing();
+            $otherUser = $conversation->getOtherUser($user);
+            $lastMessage = $conversation->getLastMessage();
+            $unreadCount = $conversation->countUnreadFor($user);
+            
+            $images = $listing->getImages()->toArray();
+
+            return [
+                'id' => $conversation->getId(),
+                'listing' => [
+                    'id' => $listing->getId(),
+                    'title' => $listing->getTitle(),
+                    'price' => (float) $listing->getPrice(),
+                    'currency' => $listing->getCurrency(),
+                    'mainImage' => !empty($images) ? $images[0]->getUrl() : null,
+                    'status' => $listing->getStatus()
+                ],
+                'otherUser' => [
+                    'id' => $otherUser->getId(),
+                    'fullName' => $otherUser->getFullName(),
+                    'profilePicture' => $otherUser->getProfilePicture(),
+                    'isPro' => $otherUser->isPro()
+                ],
+                'lastMessage' => $lastMessage ? [
+                    'content' => $lastMessage->getContent(),
+                    'createdAt' => $lastMessage->getCreatedAt()?->format('c'),
+                    'isFromMe' => $lastMessage->getSender()->getId() === $user->getId()
+                ] : null,
+                'unreadCount' => $unreadCount,
+                'lastMessageAt' => $conversation->getLastMessageAt()?->format('c')
+            ];
+        }, $conversations);
+
+        usort($data, function ($a, $b) {
+            return strtotime($b['lastMessageAt']) - strtotime($a['lastMessageAt']);
+        });
+
+        $totalUnread = $this->conversationRepository->countUnreadConversations($user);
+
+        return $this->json([
+            'conversations' => $data,
+            'total' => count($data),
+            'totalUnread' => $totalUnread
+        ]);
+    }
+
+    #[Route('/{id}', name: 'conversations_detail', methods: ['GET'])]
+    public function detail(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $conversation = $this->conversationRepository->find($id);
+        
+        if (!$conversation) {
+            return $this->json(['error' => 'Conversation introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($conversation->getBuyer()->getId() !== $user->getId() 
+            && $conversation->getSeller()->getId() !== $user->getId()) {
+            return $this->json(['error' => 'Accès non autorisé'], Response::HTTP_FORBIDDEN);
+        }
+
+        $this->messageRepository->markAllAsRead($conversation, $user);
+
+        $messages = $this->messageRepository->findByConversation($conversation);
+        $listing = $conversation->getListing();
+        $otherUser = $conversation->getOtherUser($user);
+
+        $messagesData = array_map(function ($message) use ($user) {
+            return [
+                'id' => $message->getId(),
+                'content' => $message->getContent(),
+                'isFromMe' => $message->getSender()->getId() === $user->getId(),
+                'isRead' => $message->isRead(),
+                'createdAt' => $message->getCreatedAt()?->format('c')
+            ];
+        }, $messages);
+
+        return $this->json([
+            'id' => $conversation->getId(),
+            'listing' => [
+                'id' => $listing->getId(),
+                'title' => $listing->getTitle(),
+                'price' => (float) $listing->getPrice(),
+                'currency' => $listing->getCurrency(),
+                'status' => $listing->getStatus()
+            ],
+            'otherUser' => [
+                'id' => $otherUser->getId(),
+                'fullName' => $otherUser->getFullName(),
+                'profilePicture' => $otherUser->getProfilePicture(),
+                'phone' => $otherUser->getPhone(),
+                'isPro' => $otherUser->isPro()
+            ],
+            'messages' => $messagesData,
+            'createdAt' => $conversation->getCreatedAt()?->format('c')
+        ]);
+    }
+
+    #[Route('/start/{listingId}', name: 'conversations_start', methods: ['POST'])]
+    public function start(int $listingId): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $listing = $this->listingRepository->find($listingId);
+        
+        if (!$listing) {
+            return $this->json(['error' => 'Annonce introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($listing->getUser()->getId() === $user->getId()) {
+            return $this->json(['error' => 'Vous ne pouvez pas contacter votre propre annonce'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $conversation = $this->conversationRepository->findOrCreate($listing, $user);
+
+        return $this->json([
+            'message' => 'Conversation créée',
+            'conversationId' => $conversation->getId()
+        ], Response::HTTP_OK);
+    }
+}

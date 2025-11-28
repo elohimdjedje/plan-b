@@ -1,0 +1,167 @@
+/**
+ * Utilitaires pour les annonces - VERSION PRODUCTION
+ * Utilise uniquement le backend, pas de données factices
+ */
+
+import { listingsAPI } from '../api/listings';
+
+/**
+ * Récupérer toutes les annonces avec filtres
+ * @param {Object} params - Paramètres de filtrage (category, city, type, etc.)
+ * @returns {Promise<Array>}
+ */
+export const getAllListings = async (params = {}) => {
+  try {
+    const response = await listingsAPI.getListings(params);
+    return response.data || [];
+  } catch (error) {
+    console.error('Erreur récupération annonces:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupérer une annonce par son ID
+ * @param {string|number} listingId
+ * @returns {Promise<Object|null>}
+ */
+export const getListingById = async (listingId) => {
+  try {
+    return await listingsAPI.getListing(listingId);
+  } catch (error) {
+    console.error('Erreur récupération annonce:', error);
+    return null;
+  }
+};
+
+/**
+ * Récupérer les annonces de l'utilisateur connecté
+ * @param {string} status - Statut des annonces (active, expired, sold)
+ * @returns {Promise<Array>}
+ */
+export const getUserListings = async (status = null) => {
+  try {
+    const params = status ? { status } : {};
+    const response = await listingsAPI.getMyListings(params);
+    return response.listings || [];
+  } catch (error) {
+    console.error('Erreur récupération annonces utilisateur:', error);
+    return [];
+  }
+};
+
+/**
+ * Récupérer les statistiques de l'utilisateur
+ * @returns {Promise<Object>}
+ */
+export const getUserStats = async () => {
+  try {
+    const response = await api.get('/users/stats');
+    return response.data.stats || {
+      totalListings: 0,
+      activeListings: 0,
+      totalViews: 0,
+      totalContacts: 0
+    };
+  } catch (error) {
+    console.error('Erreur récupération stats:', error);
+    return {
+      totalListings: 0,
+      activeListings: 0,
+      totalViews: 0,
+      totalContacts: 0
+    };
+  }
+};
+
+/**
+ * Créer une nouvelle annonce
+ * @param {Object} listingData
+ * @returns {Promise<Object>}
+ */
+export const createListing = async (listingData) => {
+  try {
+    return await listingsAPI.createListing(listingData);
+  } catch (error) {
+    console.error('Erreur création annonce:', error);
+    throw error;
+  }
+};
+
+/**
+ * Mettre à jour une annonce
+ * @param {string|number} listingId
+ * @param {Object} updates
+ * @returns {Promise<Object>}
+ */
+export const updateListing = async (listingId, updates) => {
+  try {
+    return await listingsAPI.updateListing(listingId, updates);
+  } catch (error) {
+    console.error('Erreur mise à jour annonce:', error);
+    throw error;
+  }
+};
+
+/**
+ * Supprimer une annonce
+ * @param {string|number} listingId
+ * @returns {Promise<void>}
+ */
+export const deleteListing = async (listingId) => {
+  try {
+    await listingsAPI.deleteListing(listingId);
+  } catch (error) {
+    console.error('Erreur suppression annonce:', error);
+    throw error;
+  }
+};
+
+/**
+ * Rechercher des annonces
+ * @param {string} query - Terme de recherche
+ * @param {Object} filters - Filtres additionnels
+ * @returns {Promise<Array>}
+ */
+export const searchListings = async (query, filters = {}) => {
+  try {
+    const response = await listingsAPI.searchListings(query, filters);
+    return response.results || [];
+  } catch (error) {
+    console.error('Erreur recherche annonces:', error);
+    return [];
+  }
+};
+
+/**
+ * Upload d'images pour une annonce
+ * @param {Array<File>} files
+ * @returns {Promise<Array>} URLs des images uploadées
+ */
+export const uploadListingImages = async (files) => {
+  try {
+    const response = await listingsAPI.uploadImages(files);
+    return response.images || [];
+  } catch (error) {
+    console.error('Erreur upload images:', error);
+    throw error;
+  }
+};
+
+/**
+ * Incrémenter les vues d'une annonce
+ * Note: Géré automatiquement par le backend lors de GET /api/v1/listings/{id}
+ */
+export const incrementListingViews = () => {
+  // Les vues sont automatiquement incrémentées côté backend
+  return Promise.resolve();
+};
+
+/**
+ * Initialiser les annonces démo (pour compatibilité)
+ * Note: En production, les annonces viennent du backend
+ */
+export const initializeDemoListings = () => {
+  // Les annonces sont chargées depuis le backend
+  return Promise.resolve();
+};

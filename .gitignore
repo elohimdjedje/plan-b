@@ -1,0 +1,86 @@
+# === BACKEND (Symfony) ===
+
+# Dependencies
+planb-backend/vendor/
+planb-backend/composer.lock
+
+# Cache & Logs
+planb-backend/var/cache/
+planb-backend/var/log/
+planb-backend/var/sessions/
+planb-backend/var/tmp/
+
+# Environment (NE PAS PARTAGER - contient des secrets)
+planb-backend/.env.local
+planb-backend/.env.*.local
+
+# Uploads (images utilisateur - à exclure pour alléger)
+planb-backend/public/uploads/
+
+# JWT Keys (À REGÉNÉRER par chaque développeur)
+planb-backend/config/jwt/*.pem
+
+# === FRONTEND (React + Vite) ===
+
+# Dependencies
+planb-frontend/node_modules/
+planb-frontend/package-lock.json
+planb-frontend/yarn.lock
+
+# Build
+planb-frontend/dist/
+planb-frontend/build/
+planb-frontend/.vite/
+
+# Environment
+planb-frontend/.env.local
+planb-frontend/.env.*.local
+
+# === IDE & Éditeurs ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+*.user
+*.userosscache
+*.sublime-workspace
+
+# === OS ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# === Autres ===
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archives (ne pas versionner les archives)
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# Temporaires
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Fichiers de test
+*.test.php
+test-*.ps1
+
+# Documentation temporaire (garder les .md importants)
+# Si vous voulez exclure certains docs temporaires
