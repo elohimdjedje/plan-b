@@ -47,11 +47,10 @@ class SecurityLogListener implements EventSubscriberInterface
         $log->setAction('LOGIN_SUCCESS');
         $log->setIpAddress($this->getClientIp($request));
         $log->setUserAgent($request->headers->get('User-Agent'));
-        $log->setDetails([
+        $log->setContext([
             'timestamp' => (new \DateTime())->format('c'),
             'path' => $request->getPathInfo(),
         ]);
-        $log->setCreatedAt(new \DateTime());
 
         $this->entityManager->persist($log);
         $this->entityManager->flush();
@@ -79,11 +78,10 @@ class SecurityLogListener implements EventSubscriberInterface
         $log->setAction('LOGOUT');
         $log->setIpAddress($this->getClientIp($request));
         $log->setUserAgent($request->headers->get('User-Agent'));
-        $log->setDetails([
+        $log->setContext([
             'timestamp' => (new \DateTime())->format('c'),
             'reason' => $event->getResponse() ? 'voluntary' : 'session_expired',
         ]);
-        $log->setCreatedAt(new \DateTime());
 
         $this->entityManager->persist($log);
         $this->entityManager->flush();

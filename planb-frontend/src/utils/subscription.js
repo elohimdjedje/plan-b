@@ -153,14 +153,17 @@ export const getSubscription = async () => {
 
 /**
  * Vérifier si l'utilisateur peut renouveler son abonnement
+ * Renouvellement possible uniquement 7 jours avant l'expiration
  * @param {Object} user - Utilisateur
  * @returns {boolean}
  */
 export const canRenewSubscription = (user) => {
   if (!user) return false;
-  // On peut renouveler si on est PRO ou si l'abonnement expire bientôt (< 7 jours)
+  if (!user.subscriptionExpiresAt) return false;
+  
+  // On peut renouveler seulement si l'abonnement expire dans 7 jours ou moins
   const daysRemaining = getDaysRemaining(user);
-  return user.isPro || daysRemaining < 7;
+  return daysRemaining <= 7 && daysRemaining > 0;
 };
 
 /**

@@ -25,10 +25,10 @@ export default function BottomNav() {
     <motion.nav
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+      className="fixed bottom-0 left-0 right-0 z-50"
     >
-      <div className="bg-white/40 backdrop-blur-2xl border-t border-white/30 shadow-2xl rounded-t-3xl">
-        <div className="max-w-md mx-auto flex items-center justify-around px-6 py-3">
+      <div className="bg-white/40 backdrop-blur-2xl border-t border-white/30">
+        <div className="max-w-md mx-auto flex items-center justify-around px-4 py-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab.path);

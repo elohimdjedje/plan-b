@@ -26,39 +26,34 @@ import {
 } from '../utils/listings';
 import { checkFavoritesChanges } from '../utils/notifications';
 import { getImageUrl, IMAGE_PLACEHOLDER } from '../utils/images';
+import PlanBLoader from '../components/animations/PlanBLoader';
 
 /**
  * Page Profil utilisateur
  */
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, accountType = 'FREE', logout } = useAuthStore();
+  const { user, accountType = 'FREE', logout, updateUser, upgradeToPro } = useAuthStore();
   const [activeTab, setActiveTab] = useState('active'); // active, expired, sold
   const [openMenuId, setOpenMenuId] = useState(null); // ID de l'annonce dont le menu est ouvert
-  const [listings, setListings] = useState([]); // État pour gérer les annonces (initialisé à [] au lieu de null)
+  const [listings, setListings] = useState([]); // État pour gérer les annonces
   const [subscription, setSubscription] = useState(null);
-  const [hasPro, setHasPro] = useState(false);
-  const [currentUserProfile, setCurrentUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Initialiser hasPro depuis le store pour affichage immédiat
+  const [hasPro, setHasPro] = useState(accountType === 'PRO' || user?.isPro || user?.accountType === 'PRO');
+  // Vérifier si les données du store sont complètes
+  const hasCompleteUserData = user?.firstName && user?.lastName;
+  // Utiliser l'utilisateur du store immédiatement seulement si données complètes
+  const [currentUserProfile, setCurrentUserProfile] = useState(hasCompleteUserData ? user : null);
+  // Loading si pas de données complètes
+  const [loading, setLoading] = useState(!hasCompleteUserData);
 
   useEffect(() => {
+    // Charger les données fraîches en arrière-plan
     loadUserData();
-    
-    // Timeout de sécurité pour éviter le chargement infini
-    const timeout = setTimeout(() => {
-      if (loading) {
-        console.log('Timeout chargement profil - affichage forcé');
-        setLoading(false);
-      }
-    }, 2000); // 2 secondes max
-    
-    return () => clearTimeout(timeout);
   }, []);
 
   const loadUserData = async () => {
     try {
-      setLoading(true);
-      
       // Récupérer l'utilisateur réel depuis l'API
       const currentUser = await getUserProfile();
       
@@ -68,37 +63,44 @@ export default function Profile() {
         return;
       }
       
-      // Charger les statistiques d'avis du vendeur
-      try {
-        const reviewsResponse = await api.get(`/reviews/seller/${currentUser.id}`);
-        currentUser.averageRating = reviewsResponse.data.stats?.averageRating || 0;
-        currentUser.reviewsCount = reviewsResponse.data.stats?.totalReviews || 0;
-      } catch (err) {
-        console.error('Erreur chargement avis:', err);
-        currentUser.averageRating = 0;
-        currentUser.reviewsCount = 0;
-      }
+      // Charger les statistiques d'avis du vendeur (en parallèle, non-bloquant)
+      api.get(`/reviews/seller/${currentUser.id}`)
+        .then(reviewsResponse => {
+          setCurrentUserProfile(prev => ({
+            ...prev,
+            averageRating: reviewsResponse.data.stats?.averageRating || 0,
+            reviewsCount: reviewsResponse.data.stats?.totalReviews || 0
+          }));
+        })
+        .catch(() => {});
 
       setCurrentUserProfile(currentUser);
       
-      // Vérifier l'abonnement
-      const sub = getSubscription(currentUser);
-      setSubscription(sub);
-      setHasPro(sub?.isActive || false);
+      // Mettre à jour le store avec les données fraîches pour le cache
+      updateUser(currentUser);
+      
+      // Vérifier si l'utilisateur est PRO
+      const isPro = currentUser?.accountType === 'PRO' || currentUser?.isPro === true;
+      setHasPro(isPro);
+      
+      // Synchroniser le store avec le statut PRO du backend
+      if (isPro && accountType !== 'PRO') {
+        upgradeToPro();
+      }
       
       // Charger les annonces de l'utilisateur
       try {
         const response = await listingsAPI.getMyListings();
         setListings(response.listings || []);
       } catch (err) {
-        console.error('Erreur chargement annonces:', err);
         setListings([]);
       }
       
     } catch (error) {
-      console.error('Erreur chargement profil:', error);
-      // Rediriger vers la connexion en cas d'erreur
-      navigate('/auth');
+      // Si erreur et pas d'utilisateur en cache, rediriger
+      if (!user) {
+        navigate('/auth');
+      }
     } finally {
       setLoading(false);
     }
@@ -109,16 +111,7 @@ export default function Profile() {
 
   // Afficher loader si en cours de chargement ou si pas d'utilisateur
   if (loading || !displayUser) {
-    return (
-      <MobileContainer headerProps={{ showLogo: false, title: 'Mon Profil' }}>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement du profil...</p>
-          </div>
-        </div>
-      </MobileContainer>
-    );
+    return <PlanBLoader />;
   }
 
   // Utiliser les annonces chargées
@@ -261,7 +254,10 @@ export default function Profile() {
                 {displayUser?.fullName || `${displayUser?.firstName || ''} ${displayUser?.lastName || ''}`.trim() || 'Utilisateur'}
               </h2>
               <p className="text-white/80 text-sm">{displayUser?.email || ''}</p>
-              {displayUser.phone && (
+              {displayUser?.nationality && (
+                <p className="text-white/70 text-xs mt-1">🌍 {displayUser.nationality}</p>
+              )}
+              {displayUser?.phone && (
                 <p className="text-white/70 text-xs mt-1">{displayUser.phone}</p>
               )}
               {(hasPro || accountType === 'PRO') && (
@@ -345,7 +341,7 @@ export default function Profile() {
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar size={16} />
                   <span className="text-white/90 text-sm">
-                    Expire dans {getDaysRemaining()} jour{getDaysRemaining() > 1 ? 's' : ''}
+                    Expire dans {getDaysRemaining(currentUserProfile)} jour{getDaysRemaining(currentUserProfile) > 1 ? 's' : ''}
                   </span>
                 </div>
                 <Button

@@ -1,123 +1,109 @@
 import { useState } from 'react';
-import { HelpCircle, ChevronRight, ChevronDown, Home, Car, Palmtree, Search } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-// Mapping des icônes Lucide
-const IconComponents = {
-  Home,
-  Car,
-  Palmtree,
-  Search
-};
+import { X, MapPin, Home, Car, Palmtree, Search } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 /**
- * Section "D'après vos dernières recherches" (Menu déroulant)
- * Permet de cliquer sur une recherche pour appliquer les filtres correspondants
+ * Section "Recherches récentes" style Leboncoin
+ * Cartes horizontales avec titre, catégorie, localisation et bouton X
  */
 export default function RecentSearches({ 
-  title = "D'après vos dernières recherches", 
+  title = "Recherches récentes", 
   searches = [],
-  onSearchClick 
+  onSearchClick,
+  onRemoveSearch
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [localSearches, setLocalSearches] = useState(searches);
 
-  const handleSearchClick = (search) => {
-    if (onSearchClick) {
-      onSearchClick(search);
-    }
-    setIsOpen(false); // Ferme le menu après sélection
+  // Supprimer une recherche
+  const handleRemove = (e, index) => {
+    e.stopPropagation();
+    const updated = localSearches.filter((_, i) => i !== index);
+    setLocalSearches(updated);
+    localStorage.setItem('planb_recent_searches', JSON.stringify(updated));
+    if (onRemoveSearch) onRemoveSearch(index);
   };
 
-  // Fonction pour récupérer le composant d'icône
-  const getIconComponent = (iconName) => {
-    // Vérifier que iconName est une string valide
-    if (!iconName || typeof iconName !== 'string') {
-      return Search;
-    }
-    // Retourner le composant ou Search par défaut
-    const Component = IconComponents[iconName];
-    return Component || Search;
+  // Mapper catégorie vers label
+  const getCategoryLabel = (category) => {
+    const labels = {
+      'immobilier': 'Immobilier',
+      'vehicule': 'Véhicules',
+      'vacance': 'Vacances',
+      'all': 'Toutes catégories'
+    };
+    return labels[category] || 'Recherche';
   };
 
-  if (!searches || searches.length === 0) return null;
+  // Mapper type vers label
+  const getTypeLabel = (type) => {
+    if (type === 'location') return 'Locations';
+    if (type === 'vente') return 'Ventes';
+    return '';
+  };
+
+  if (!localSearches || localSearches.length === 0) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="mb-6"
     >
-      {/* Titre avec icône aide */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-bold text-secondary-900">{title}</h2>
-        <button className="p-2 hover:bg-secondary-100 rounded-full transition-colors">
-          <HelpCircle size={20} className="text-secondary-600" />
-        </button>
+      {/* Titre */}
+      <h2 className="text-lg font-bold text-secondary-900 mb-4">{title}</h2>
+
+      {/* Grille de cartes - scroll horizontal sur mobile */}
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+        {localSearches.map((search, index) => {
+          const filters = search.filters || {};
+          const category = getCategoryLabel(filters.category);
+          const type = getTypeLabel(filters.type);
+          const city = filters.city || '';
+          
+          // Construire le sous-titre
+          const subtitle = [type, category].filter(Boolean).join(' - ');
+          const location = city ? `${city}` : '';
+          
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              onClick={() => onSearchClick && onSearchClick(search)}
+              className="flex-shrink-0 min-w-[200px] max-w-[280px] bg-white rounded-xl border border-secondary-200 p-4 cursor-pointer hover:border-primary-300 hover:shadow-md transition-all group relative"
+            >
+              {/* Bouton X */}
+              <button
+                onClick={(e) => handleRemove(e, index)}
+                className="absolute top-2 right-2 p-1.5 hover:bg-secondary-100 rounded-full opacity-60 hover:opacity-100 transition-all"
+              >
+                <X size={16} className="text-secondary-500" />
+              </button>
+
+              {/* Titre de la recherche */}
+              <h3 className="font-semibold text-secondary-900 pr-6 line-clamp-1 group-hover:text-primary-600 transition-colors">
+                {search.label || 'Recherche'}
+              </h3>
+
+              {/* Sous-titre (catégorie - type) */}
+              {subtitle && (
+                <p className="text-sm text-primary-600 mt-1">
+                  {subtitle}
+                </p>
+              )}
+
+              {/* Localisation */}
+              {location && (
+                <div className="flex items-center gap-1 mt-2 text-secondary-500">
+                  <MapPin size={14} />
+                  <span className="text-sm">{location}</span>
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
-
-      {/* Bouton menu déroulant */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 bg-white rounded-xl border border-secondary-200 hover:border-secondary-300 transition-all shadow-sm"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-50 rounded-full flex items-center justify-center">
-            {(() => {
-              const IconComponent = getIconComponent(searches[0]?.icon);
-              return <IconComponent size={20} className="text-primary-600" />;
-            })()}
-          </div>
-          <span className="font-medium text-secondary-900">
-            {isOpen ? 'Sélectionnez une recherche' : searches[0]?.label}
-          </span>
-        </div>
-        <ChevronDown 
-          size={20} 
-          className={`text-secondary-600 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
-
-      {/* Menu déroulant */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-2 overflow-hidden"
-          >
-            <div className="bg-white rounded-xl border border-secondary-200 shadow-lg">
-              {searches.map((search, index) => {
-                const IconComponent = getIconComponent(search.icon);
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleSearchClick(search)}
-                    className={`
-                      w-full flex items-center justify-between p-4 
-                      hover:bg-secondary-50 transition-colors
-                      ${index !== searches.length - 1 ? 'border-b border-secondary-100' : ''}
-                      ${index === 0 ? 'rounded-t-xl' : ''}
-                      ${index === searches.length - 1 ? 'rounded-b-xl' : ''}
-                    `}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary-50 rounded-full flex items-center justify-center">
-                        <IconComponent size={20} className="text-primary-600" />
-                      </div>
-                      <span className="font-medium text-secondary-900">{search.label}</span>
-                    </div>
-                    <ChevronRight size={18} className="text-secondary-400" />
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

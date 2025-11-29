@@ -77,6 +77,20 @@ class ListingController extends AbstractController
         ]);
     }
 
+    #[Route('/pro', name: 'listings_pro', methods: ['GET'])]
+    public function getProListings(Request $request): JsonResponse
+    {
+        $limit = min((int) $request->query->get('limit', 10), 20);
+        
+        // Récupérer les annonces des vendeurs PRO
+        $proListings = $this->listingRepository->findProListings($limit);
+        
+        return $this->json([
+            'data' => array_map(fn($listing) => $this->serializeListing($listing), $proListings),
+            'total' => count($proListings)
+        ]);
+    }
+
     #[Route('/{id}', name: 'listings_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(int $id): JsonResponse
     {
@@ -291,6 +305,13 @@ class ListingController extends AbstractController
 
     private function serializeListing(Listing $listing, bool $detailed = false): array
     {
+        // Calculer le score du vendeur (somme des vues + contacts de toutes ses annonces)
+        $user = $listing->getUser();
+        $sellerScore = 0;
+        foreach ($user->getListings() as $userListing) {
+            $sellerScore += $userListing->getViewsCount() + $userListing->getContactsCount();
+        }
+
         $data = [
             'id' => $listing->getId(),
             'title' => $listing->getTitle(),
@@ -311,10 +332,14 @@ class ListingController extends AbstractController
             'createdAt' => $listing->getCreatedAt()->format('c'),
             'expiresAt' => $listing->getExpiresAt()->format('c'),
             'mainImage' => $listing->getMainImage()?->getUrl(),
-            // Toujours inclure les infos user de base pour afficher le badge PRO
+            // Toujours inclure les infos user de base pour afficher le badge PRO et le nom
             'user' => [
-                'accountType' => $listing->getUser()->getAccountType(),
-                'isPro' => $listing->getUser()->isPro(),
+                'id' => $user->getId(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'accountType' => $user->getAccountType(),
+                'isPro' => $user->isPro(),
+                'sellerScore' => $sellerScore,
             ],
         ];
 
@@ -326,6 +351,10 @@ class ListingController extends AbstractController
                 'url' => $img->getUrl(),
                 'thumbnailUrl' => $img->getThumbnailUrl(),
             ], $listing->getImages()->toArray());
+            // Ajouter les infos de contact spécifiques à l'annonce
+            $data['contactPhone'] = $listing->getContactPhone();
+            $data['contactWhatsapp'] = $listing->getContactWhatsapp();
+            $data['contactEmail'] = $listing->getContactEmail();
             // Ajouter les infos détaillées de l'user
             $data['user']['id'] = $listing->getUser()->getId();
             $data['user']['firstName'] = $listing->getUser()->getFirstName();

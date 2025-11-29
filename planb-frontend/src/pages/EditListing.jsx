@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, AlertCircle, Crown, Lock } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Crown, Lock, Phone, MessageCircle, Mail } from 'lucide-react';
 import MobileContainer from '../components/layout/MobileContainer';
 import GlassCard from '../components/common/GlassCard';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
-import { getListingById, updateListing } from '../utils/listings';
-import { isSubscriptionActive } from '../utils/subscription';
+import SpecificationsForm from '../components/listing/SpecificationsForm';
+import PlanBLoader from '../components/animations/PlanBLoader';
+import { listingsAPI } from '../api/listings';
+import { authAPI } from '../api/auth';
 import { toast } from 'react-hot-toast';
 
 /**
@@ -20,40 +22,70 @@ export default function EditListing() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  
-  // Vérifier si l'utilisateur est PRO
-  const isPro = isSubscriptionActive();
+  const [isPro, setIsPro] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
-    priceUnit: 'mois', // Par défaut 'mois' pour les locations
+    priceUnit: 'mois',
     city: '',
-    type: 'vente', // 'vente' ou 'location'
-    category: ''
+    commune: '',
+    quartier: '',
+    type: 'vente',
+    category: '',
+    subcategory: '',
+    contactPhone: '',
+    contactWhatsapp: '',
+    contactEmail: '',
+    specifications: {}
   });
 
   useEffect(() => {
-    // Charger l'annonce
-    const foundListing = getListingById(id);
-    if (foundListing) {
-      setListing(foundListing);
-      setFormData({
-        title: foundListing.title || '',
-        description: foundListing.description || '',
-        price: foundListing.price || '',
-        priceUnit: foundListing.priceUnit || 'mois',
-        city: foundListing.city || '',
-        type: foundListing.type || 'vente',
-        category: foundListing.category || ''
-      });
-    } else {
-      toast.error('Annonce introuvable');
-      navigate('/profile');
-    }
+    const loadData = async () => {
+      try {
+        // Charger l'utilisateur pour vérifier le statut PRO
+        const user = await authAPI.getMe();
+        setIsPro(user?.accountType === 'PRO' || user?.isPro === true);
+        
+        // Charger l'annonce depuis l'API
+        const listingData = await listingsAPI.getListing(id);
+        
+        if (listingData) {
+          setListing(listingData);
+          setFormData({
+            title: listingData.title || '',
+            description: listingData.description || '',
+            price: listingData.price || '',
+            priceUnit: listingData.priceUnit || 'mois',
+            city: listingData.city || '',
+            commune: listingData.commune || '',
+            quartier: listingData.quartier || '',
+            type: listingData.type || 'vente',
+            category: listingData.category || '',
+            subcategory: listingData.subcategory || '',
+            contactPhone: listingData.contactPhone || '',
+            contactWhatsapp: listingData.contactWhatsapp || '',
+            contactEmail: listingData.contactEmail || '',
+            specifications: listingData.specifications || {}
+          });
+        } else {
+          toast.error('Annonce introuvable');
+          navigate('/profile');
+        }
+      } catch (error) {
+        console.error('Erreur chargement annonce:', error);
+        toast.error('Impossible de charger l\'annonce');
+        navigate('/profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, [id, navigate]);
 
   const handleChange = (field, value) => {
@@ -82,12 +114,12 @@ export default function EditListing() {
     saveChanges();
   };
 
-  const saveChanges = () => {
-    setLoading(true);
+  const saveChanges = async () => {
+    setSaving(true);
 
     try {
-      // Mettre à jour l'annonce
-      updateListing(id, formData);
+      // Mettre à jour l'annonce via l'API
+      await listingsAPI.updateListing(id, formData);
       
       toast.success('✅ Annonce modifiée avec succès !');
       
@@ -125,7 +157,7 @@ export default function EditListing() {
       
       toast.error(errorMessage, { duration: 5000 });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -133,6 +165,11 @@ export default function EditListing() {
     // Redirection vers la page de paiement avec montant 1500 FCFA
     navigate(`/payment/edit-listing?listingId=${id}&amount=1500`);
   };
+
+  // Loading state
+  if (loading) {
+    return <PlanBLoader />;
+  }
 
   if (!listing) {
     return null;
@@ -238,12 +275,23 @@ export default function EditListing() {
                       onChange={(e) => handleChange('priceUnit', e.target.value)}
                       options={[
                         { value: 'mois', label: '/mois' },
+                        { value: 'jour', label: '/jour' },
                         { value: 'heure', label: '/heure' }
                       ]}
                       className="w-32"
                     />
                   )}
                 </div>
+              </div>
+
+              {/* Spécifications dynamiques */}
+              <div className="pt-4 border-t border-secondary-100">
+                <SpecificationsForm
+                  category={formData.category}
+                  subcategory={formData.subcategory}
+                  specifications={formData.specifications}
+                  onChange={(specs) => handleChange('specifications', specs)}
+                />
               </div>
 
               <Input
@@ -255,18 +303,88 @@ export default function EditListing() {
             </div>
           </GlassCard>
 
-          {/* Bouton Sauvegarder */}
-          <div className="pt-4">
-            <Button
-              variant="primary"
-              fullWidth
-              size="lg"
-              onClick={handleSave}
-              disabled={loading}
-              icon={<Save size={20} />}
-            >
-              {loading ? 'Sauvegarde...' : (isPro ? 'Sauvegarder (Gratuit)' : 'Continuer vers le paiement')}
-            </Button>
+          {/* Moyens de contact */}
+          <GlassCard>
+            <h3 className="font-semibold text-lg mb-4">Moyens de contact</h3>
+            <p className="text-sm text-secondary-500 mb-4">
+              Renseignez au moins un moyen de contact pour que les acheteurs puissent vous joindre.
+            </p>
+            
+            <div className="space-y-4">
+              <Input
+                label="Numéro WhatsApp"
+                value={formData.contactWhatsapp}
+                onChange={(e) => handleChange('contactWhatsapp', e.target.value)}
+                placeholder="Ex: +225 07 XX XX XX XX"
+                icon={<MessageCircle size={18} className="text-green-500" />}
+              />
+              
+              <Input
+                label="Téléphone"
+                value={formData.contactPhone}
+                onChange={(e) => handleChange('contactPhone', e.target.value)}
+                placeholder="Ex: +225 07 XX XX XX XX"
+                icon={<Phone size={18} className="text-blue-500" />}
+              />
+              
+              <Input
+                label="Email"
+                type="email"
+                value={formData.contactEmail}
+                onChange={(e) => handleChange('contactEmail', e.target.value)}
+                placeholder="Ex: contact@email.com"
+                icon={<Mail size={18} className="text-orange-500" />}
+              />
+            </div>
+          </GlassCard>
+
+          {/* Boutons d'action */}
+          <div className="pt-4 space-y-3">
+            {isPro ? (
+              <>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  onClick={handleSave}
+                  disabled={saving}
+                  icon={<Save size={20} />}
+                >
+                  {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                </Button>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="lg"
+                  onClick={() => navigate('/profile')}
+                  icon={<ArrowLeft size={20} />}
+                >
+                  Retour
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  onClick={handleSave}
+                  disabled={saving}
+                  icon={<Save size={20} />}
+                >
+                  Continuer vers le paiement
+                </Button>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  size="lg"
+                  onClick={() => navigate('/profile')}
+                  icon={<ArrowLeft size={20} />}
+                >
+                  Retour
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </MobileContainer>

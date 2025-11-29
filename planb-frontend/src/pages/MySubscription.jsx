@@ -7,14 +7,14 @@ import GlassCard from '../components/common/GlassCard';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { 
-  getSubscription, 
   getDaysRemaining, 
   canRenewSubscription, 
   formatEndDate,
-  updateSubscriptionStatus,
   isSubscriptionActive
 } from '../utils/subscription';
+import { getUserProfile } from '../utils/auth';
 import { formatPrice } from '../utils/format';
+import PlanBLoader from '../components/animations/PlanBLoader';
 
 /**
  * Page d'affichage de l'abonnement PRO actuel
@@ -24,28 +24,92 @@ export default function MySubscription() {
   const [subscription, setSubscription] = useState(null);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [canRenew, setCanRenew] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mettre à jour le statut et récupérer l'abonnement
-    const updatedSub = updateSubscriptionStatus();
+    loadSubscriptionData();
     
-    if (!updatedSub) {
-      // Si pas d'abonnement ou expiré, rediriger vers upgrade
-      navigate('/upgrade');
-      return;
-    }
+    // Timeout de sécurité pour éviter le chargement infini
+    const timeout = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
+  }, []);
 
-    setSubscription(updatedSub);
-    setDaysRemaining(getDaysRemaining());
-    setCanRenew(canRenewSubscription());
-  }, [navigate]);
+  const loadSubscriptionData = async () => {
+    try {
+      setLoading(true);
+      // Récupérer le profil utilisateur depuis le backend
+      const user = await getUserProfile();
+      
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      // Vérifier si l'utilisateur est PRO
+      const isPro = user.accountType === 'PRO' || user.isPro;
+      
+      if (!isPro) {
+        // Si pas PRO, rediriger vers upgrade
+        navigate('/upgrade');
+        return;
+      }
+
+      // Construire l'objet subscription depuis les données du backend
+      const days = getDaysRemaining(user);
+      
+      // Calculer la durée en mois entre startDate et expiresAt
+      const startDate = user.subscriptionStartDate ? new Date(user.subscriptionStartDate) : null;
+      const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null;
+      let months = 1;
+      if (startDate && expiresAt) {
+        const diffMonths = (expiresAt.getFullYear() - startDate.getFullYear()) * 12 + (expiresAt.getMonth() - startDate.getMonth());
+        months = Math.max(1, diffMonths);
+      }
+      
+      const subData = {
+        isActive: true,
+        status: days <= 7 ? 'expiring_soon' : 'active',
+        expiresAt: user.subscriptionExpiresAt,
+        startDate: user.subscriptionStartDate,
+        months: months,
+        price: 10000 * months // Prix selon durée
+      };
+
+      setSubscription(subData);
+      setDaysRemaining(days);
+      setCanRenew(canRenewSubscription(user));
+    } catch (error) {
+      console.error('Erreur chargement abonnement:', error);
+      navigate('/profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <PlanBLoader />
+    );
+  }
 
   if (!subscription) {
-    return null; // En cours de redirection
+    return <PlanBLoader />;
   }
 
   const handleRenew = () => {
-    navigate('/upgrade');
+    // Aller directement à la page de paiement pour le renouvellement
+    navigate('/wave-payment', { 
+      state: { 
+        isRenewal: true,
+        duration: 30,
+        amount: 10000
+      } 
+    });
   };
 
   const statusConfig = {
@@ -68,22 +132,21 @@ export default function MySubscription() {
   const currentStatus = statusConfig[subscription.status] || statusConfig.active;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-blue-50 to-purple-50">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-secondary-200">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
+    <MobileContainer 
+      headerProps={{ 
+        showLogo: false, 
+        title: 'Mon Abonnement',
+        leftAction: (
           <button
             onClick={() => navigate('/profile')}
             className="p-2 hover:bg-secondary-100 rounded-xl transition-colors"
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft size={24} className="text-secondary-700" />
           </button>
-          <h1 className="text-lg font-semibold flex-1">Mon Abonnement</h1>
-        </div>
-      </div>
-
-      <MobileContainer>
-        <div className="max-w-md mx-auto px-4 pt-20 pb-24 space-y-4">
+        )
+      }}
+    >
+      <div className="space-y-4 pb-8">
           {/* Statut de l'abonnement */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -107,7 +170,7 @@ export default function MySubscription() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm opacity-90 mb-1">Expire le</div>
-                    <div className="font-bold text-lg">{formatEndDate()}</div>
+                    <div className="font-bold text-lg">{formatEndDate(subscription.expiresAt)}</div>
                   </div>
                   <div>
                     <div className="text-sm opacity-90 mb-1">Jours restants</div>
@@ -205,14 +268,14 @@ export default function MySubscription() {
               icon={canRenew ? <Unlock size={20} /> : <Lock size={20} />}
               className={!canRenew ? 'opacity-50 cursor-not-allowed' : ''}
             >
-              {canRenew ? 'Renouveler maintenant' : 'Renouvellement débloqué dans ' + (daysRemaining - 2) + ' jours'}
+              {canRenew ? 'Renouveler maintenant' : `Renouvellement disponible dans ${Math.max(0, daysRemaining - 7)} jours`}
             </Button>
 
             {!canRenew && (
               <div className="mt-3 text-center">
                 <p className="text-sm text-secondary-600">
                   <Lock size={14} className="inline mr-1" />
-                  Le renouvellement sera disponible 2 jours avant l'expiration
+                  Le renouvellement sera disponible 7 jours avant l'expiration
                 </p>
               </div>
             )}
@@ -226,8 +289,7 @@ export default function MySubscription() {
               </div>
             )}
           </div>
-        </div>
-      </MobileContainer>
-    </div>
+      </div>
+    </MobileContainer>
   );
 }

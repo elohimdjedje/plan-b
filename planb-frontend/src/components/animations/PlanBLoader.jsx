@@ -1,27 +1,22 @@
 import { motion } from 'framer-motion';
 
 /**
- * Loader minimaliste style macOS - petit et élégant
+ * Loader style macOS - centré et adaptatif
  */
 export default function PlanBLoader({ text = "Chargement..." }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center">
       {/* Spinner style macOS */}
-      <motion.div
-        className="relative w-8 h-8"
-        animate={{ rotate: 360 }}
-        transition={{
-          duration: 1,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      >
+      <div className="relative w-10 h-10">
         {[...Array(12)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute top-0 left-1/2 w-0.5 h-2 rounded-full bg-primary-500"
+            className="absolute w-[3px] h-[10px] rounded-full bg-primary-500"
             style={{
-              transformOrigin: '50% 16px',
+              top: '0',
+              left: '50%',
+              marginLeft: '-1.5px',
+              transformOrigin: 'center 20px',
               transform: `rotate(${i * 30}deg)`,
             }}
             animate={{
@@ -35,18 +30,17 @@ export default function PlanBLoader({ text = "Chargement..." }) {
             }}
           />
         ))}
-      </motion.div>
+      </div>
 
-      {/* Slogan animé */}
+      {/* Slogan */}
       <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.4, 0.7, 0.4] }}
+        animate={{ opacity: [0.4, 0.8, 0.4] }}
         transition={{
           duration: 2,
           repeat: Infinity,
           ease: "easeInOut"
         }}
-        className="mt-8 text-xs text-secondary-600 font-semibold tracking-wider"
+        className="mt-8 text-xs text-secondary-500 font-medium tracking-wide text-center"
       >
         POUR VOUS IL Y A TOUJOURS UN PLAN B...
       </motion.p>

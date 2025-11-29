@@ -8,6 +8,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Textarea from '../components/common/Textarea';
+import SpecificationsForm from '../components/listing/SpecificationsForm';
 import { CATEGORIES, LISTING_TYPES, COUNTRIES } from '../constants/categories';
 import { CITIES_LIST, getCommunes } from '../constants/locations';
 import { useAuthStore } from '../store/authStore';
@@ -50,7 +51,7 @@ export default function Publish() {
     contactWhatsapp: '',
     contactEmail: '',
     images: [],
-    characteristics: {},
+    specifications: {},
   });
 
   const maxPhotos = accountType === 'PRO' ? 10 : 3;
@@ -139,7 +140,7 @@ export default function Publish() {
         contactPhone: formData.contactPhone || null,
         contactWhatsapp: formData.contactWhatsapp || null,
         contactEmail: formData.contactEmail || null,
-        specifications: formData.characteristics || {},
+        specifications: formData.specifications || {},
         images: imageUrls,
       };
       
@@ -464,12 +465,23 @@ export default function Publish() {
                           onChange={(e) => handleChange('priceUnit', e.target.value)}
                           options={[
                             { value: 'mois', label: '/mois' },
+                            { value: 'jour', label: '/jour' },
                             { value: 'heure', label: '/heure' }
                           ]}
                           className="w-32"
                         />
                       )}
                     </div>
+                  </div>
+                  
+                  {/* Formulaire de spécifications dynamiques */}
+                  <div className="pt-4 border-t border-secondary-100">
+                    <SpecificationsForm
+                      category={formData.category}
+                      subcategory={formData.subcategory}
+                      specifications={formData.specifications}
+                      onChange={(specs) => handleChange('specifications', specs)}
+                    />
                   </div>
                 </div>
               </GlassCard>

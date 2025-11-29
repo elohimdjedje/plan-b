@@ -263,6 +263,10 @@ class UserController extends AbstractController
                 'mainImage' => $listing->getMainImage()?->getUrl(),
                 'isFeatured' => $listing->isFeatured(),
                 'createdAt' => $listing->getCreatedAt()->format('c'),
+                // Ajouter les contacts de l'annonce
+                'contactPhone' => $listing->getContactPhone(),
+                'contactWhatsapp' => $listing->getContactWhatsapp(),
+                'contactEmail' => $listing->getContactEmail(),
             ];
         }, $listings);
 

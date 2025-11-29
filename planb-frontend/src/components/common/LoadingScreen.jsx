@@ -1,12 +1,8 @@
-import ElephantLoader from '../animations/ElephantLoader';
+import PlanBLoader from '../animations/PlanBLoader';
 
 /**
- * Écran de chargement pleine page avec les éléphants
+ * Écran de chargement pleine page style macOS
  */
 export default function LoadingScreen({ text = 'Chargement...' }) {
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-      <ElephantLoader size="lg" text={text} />
-    </div>
-  );
+  return <PlanBLoader text={text} />;
 }

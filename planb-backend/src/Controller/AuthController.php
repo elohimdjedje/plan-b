@@ -227,8 +227,8 @@ class AuthController extends AbstractController
         if (isset($data['country']) && !empty($data['country'])) {
             $user->setCountry($data['country']);
         }
-        if (isset($data['whatsappPhone']) && !empty($data['whatsappPhone'])) {
-            $user->setWhatsappPhone($data['whatsappPhone']);
+        if (isset($data['nationality']) && !empty($data['nationality'])) {
+            $user->setNationality($data['nationality']);
         }
 
         $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
@@ -305,11 +305,13 @@ class AuthController extends AbstractController
             'accountType' => $user->getAccountType(),
             'isPro' => $user->isPro(),
             'country' => $user->getCountry(),
+            'nationality' => $user->getNationality(),
             'city' => $user->getCity(),
             'profilePicture' => $user->getProfilePicture(),
             'isEmailVerified' => $user->isEmailVerified(),
             'isPhoneVerified' => $user->isPhoneVerified(),
             'subscriptionExpiresAt' => $user->getSubscriptionExpiresAt()?->format('c'),
+            'subscriptionStartDate' => $user->getSubscriptionStartDate()?->format('c'),
             'createdAt' => $user->getCreatedAt()?->format('c'),
         ]);
     }

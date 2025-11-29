@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogIn, UserPlus, Mail, Lock, User, Phone, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, User, Loader2, Globe, Flag } from 'lucide-react';
 import GlassCard from '../components/common/GlassCard';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import PhoneInput from '../components/common/PhoneInput';
 import { login as apiLogin, register as apiRegister } from '../utils/auth';
 import { toast } from 'react-hot-toast';
+import { countries, getNationalityByCode } from '../data/countries';
 
 /**
  * Page d'authentification (Connexion / Inscription)
@@ -35,9 +35,19 @@ export default function Auth() {
     password: '',
     firstName: '',
     lastName: '',
-    country: 'CI',
-    whatsappPhone: '',
+    country: '',
+    nationality: '',
   });
+
+  // Mettre à jour automatiquement la nationalité quand le pays change
+  const handleCountryChange = (countryCode) => {
+    const nationality = getNationalityByCode(countryCode);
+    setFormData(prev => ({ 
+      ...prev, 
+      country: countryCode,
+      nationality: nationality 
+    }));
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -49,7 +59,7 @@ export default function Auth() {
 
     try {
       if (mode === 'register') {
-        // Inscription avec le nouveau système simplifié
+        // Inscription
         const registerData = {
           email: formData.email,
           password: formData.password,
@@ -57,9 +67,9 @@ export default function Auth() {
           lastName: formData.lastName,
         };
         
-        // Ajouter les champs optionnels s'ils sont remplis
+        // Ajouter pays et nationalité si renseignés
         if (formData.country) registerData.country = formData.country;
-        if (formData.whatsappPhone) registerData.whatsappPhone = formData.whatsappPhone;
+        if (formData.nationality) registerData.nationality = formData.nationality;
         
         await apiRegister(registerData);
         
@@ -68,13 +78,14 @@ export default function Auth() {
         // Passer en mode connexion (ne pas se connecter automatiquement)
         setMode('login');
         
-        // Garder l'email et effacer le mot de passe
+        // Garder l'email et effacer les autres champs
         setFormData(prev => ({
           ...prev,
-          password: '', // Effacer le mot de passe pour sécurité
+          password: '',
           firstName: '',
           lastName: '',
-          whatsappPhone: ''
+          country: '',
+          nationality: '',
         }));
       } else {
         // Connexion
@@ -240,31 +251,40 @@ export default function Auth() {
                   />
                 </div>
 
-                <div className="pt-2 border-t border-gray-200">
-                  <p className="text-xs text-secondary-600 mb-3">Optionnel (peut être ajouté plus tard)</p>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-700 mb-1">Pays</label>
-                      <select
-                        value={formData.country}
-                        onChange={(e) => handleChange('country', e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                      >
-                        <option value="">Sélectionner...</option>
-                        <option value="CI">Côte d'Ivoire</option>
-                        <option value="BJ">Bénin</option>
-                        <option value="SN">Sénégal</option>
-                        <option value="ML">Mali</option>
-                      </select>
-                    </div>
+                {/* Pays et Nationalité */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-secondary-700 mb-1.5">
+                      <Globe size={16} className="text-secondary-400" />
+                      Pays
+                    </label>
+                    <select
+                      value={formData.country}
+                      onChange={(e) => handleCountryChange(e.target.value)}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm bg-white"
+                      required
+                    >
+                      <option value="">Sélectionner...</option>
+                      {countries.map(country => (
+                        <option key={country.code} value={country.code}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <PhoneInput
-                      label="WhatsApp (optionnel)"
-                      value={formData.whatsappPhone}
-                      onChange={(value) => handleChange('whatsappPhone', value)}
-                      placeholder="07 XX XX XX XX"
-                      defaultCountry={formData.country || 'CI'}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-secondary-700 mb-1.5">
+                      <Flag size={16} className="text-secondary-400" />
+                      Nationalité
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nationality}
+                      onChange={(e) => handleChange('nationality', e.target.value)}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm bg-white"
+                      placeholder="Nationalité"
+                      required
                     />
                   </div>
                 </div>

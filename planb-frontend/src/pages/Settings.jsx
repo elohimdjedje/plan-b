@@ -12,6 +12,7 @@ import Textarea from '../components/common/Textarea';
 import { useAuthStore } from '../store/authStore';
 import { getUserProfile, saveUserProfile } from '../utils/auth';
 import { toast } from 'react-hot-toast';
+import MacSpinner from '../components/animations/MacSpinner';
 
 /**
  * Page Paramètres du compte
@@ -133,7 +134,7 @@ export default function Settings() {
       <div className="max-w-md mx-auto px-4 py-6 space-y-4 pb-24">
         {initialLoading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            <MacSpinner size="lg" />
           </div>
         ) : (
         <div className="space-y-4">

@@ -20,17 +20,6 @@ framework:
     validation:
         email_validation_mode: html5
         enable_attributes: true
-    
-    # Security Headers (OWASP recommandations)
-    response:
-        http_protocol_version: '1.1'
-        default_charset: 'utf-8'
-        headers:
-            X-Frame-Options: 'DENY'
-            X-Content-Type-Options: 'nosniff'
-            X-XSS-Protection: '1; mode=block'
-            Referrer-Policy: 'strict-origin-when-cross-origin'
-            Permissions-Policy: 'geolocation=(), microphone=(), camera=()'
 
 when@test:
     framework:

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Shield, Clock, CheckCircle2,
-  Smartphone, CreditCard, AlertCircle, Crown, Sparkles, Star
+  Smartphone, CreditCard, AlertCircle, Crown, Sparkles, Star, RefreshCw
 } from 'lucide-react';
 import MobileContainer from '../components/layout/MobileContainer';
 import GlassCard from '../components/common/GlassCard';
@@ -32,13 +32,18 @@ const PRICING_PLANS = {
  */
 export default function WavePayment() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, error
   
-  // Récupérer selectedMonths depuis l'URL ou utiliser 3 par défaut
+  // Vérifier si c'est un renouvellement (depuis navigation state)
+  const isRenewal = location.state?.isRenewal || false;
+  
+  // Récupérer selectedMonths depuis l'URL ou utiliser 1 par défaut (ou 1 pour renouvellement)
   const [selectedMonths, setSelectedMonths] = useState(() => {
+    if (isRenewal) return 1; // Renouvellement = 1 mois par défaut
     return parseInt(searchParams.get('months')) || 1;
   });
 
@@ -144,7 +149,7 @@ export default function WavePayment() {
           title: '',
           leftAction: (
             <button 
-              onClick={() => navigate('/upgrade')}
+              onClick={() => navigate(isRenewal ? '/my-subscription' : '/upgrade')}
               className="p-2 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm"
             >
               <ArrowLeft size={24} className="text-secondary-900" />
@@ -161,15 +166,34 @@ export default function WavePayment() {
             className="text-center"
           >
             <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
-              <Crown size={40} className="text-white" />
+              {isRenewal ? <RefreshCw size={40} className="text-white" /> : <Crown size={40} className="text-white" />}
             </div>
             <h1 className="text-2xl font-bold text-secondary-900 mb-2">
-              Paiement Compte PRO
+              {isRenewal ? 'Renouvellement PRO' : 'Paiement Compte PRO'}
             </h1>
             <p className="text-secondary-600">
-              Déverrouillez toutes les fonctionnalités
+              {isRenewal ? 'Prolongez votre abonnement PRO' : 'Déverrouillez toutes les fonctionnalités'}
             </p>
           </motion.div>
+
+          {/* Message info renouvellement */}
+          {isRenewal && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-50 border border-blue-200 rounded-xl p-4"
+            >
+              <div className="flex items-start gap-3">
+                <Clock size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Continuité garantie</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Votre nouvel abonnement démarrera automatiquement 30 minutes après l'expiration de l'abonnement actuel.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           <AnimatePresence mode="wait">
             {paymentStatus === 'idle' || paymentStatus === 'error' ? (

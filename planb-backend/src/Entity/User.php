@@ -69,6 +69,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $city = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $nationality = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $profilePicture = null;
 
@@ -80,6 +83,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $subscriptionExpiresAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $subscriptionStartDate = null;
 
     #[ORM\Column]
     private bool $isLifetimePro = false;
@@ -270,6 +276,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getNationality(): ?string
+    {
+        return $this->nationality;
+    }
+
+    public function setNationality(?string $nationality): static
+    {
+        $this->nationality = $nationality;
+        return $this;
+    }
+
     public function getProfilePicture(): ?string
     {
         return $this->profilePicture;
@@ -311,6 +328,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setSubscriptionExpiresAt(?\DateTimeInterface $subscriptionExpiresAt): static
     {
         $this->subscriptionExpiresAt = $subscriptionExpiresAt;
+        return $this;
+    }
+
+    public function getSubscriptionStartDate(): ?\DateTimeInterface
+    {
+        return $this->subscriptionStartDate;
+    }
+
+    public function setSubscriptionStartDate(?\DateTimeInterface $subscriptionStartDate): static
+    {
+        $this->subscriptionStartDate = $subscriptionStartDate;
         return $this;
     }
 

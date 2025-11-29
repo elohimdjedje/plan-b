@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useFavorites } from '../hooks/useFavorites';
 import FavoriteButton from '../components/favorites/FavoriteButton';
 import { getImageUrl } from '../utils/images';
+import PlanBLoader from '../components/animations/PlanBLoader';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -26,14 +27,7 @@ const FavoritesList = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 size={48} className="animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-gray-600">Chargement de vos favoris...</p>
-        </div>
-      </div>
-    );
+    return <PlanBLoader />;
   }
 
   return (

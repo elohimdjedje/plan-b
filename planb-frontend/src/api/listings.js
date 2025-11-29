@@ -65,4 +65,10 @@ export const listingsAPI = {
     const response = await api.post(`/listings/${id}/contact`);
     return response.data;
   },
+
+  // Obtenir les annonces des vendeurs PRO (Top Annonces)
+  getProListings: async (limit = 10) => {
+    const response = await api.get('/listings/pro', { params: { limit } });
+    return response.data;
+  },
 };

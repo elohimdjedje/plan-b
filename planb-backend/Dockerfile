@@ -39,8 +39,8 @@ RUN composer install --optimize-autoloader
 # Permissions
 RUN chown -R www-data:www-data /var/www/html
 
-# Exposer le port
-EXPOSE 8000
+# Exposer le port PHP-FPM
+EXPOSE 9000
 
-# Commande de démarrage
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+# Commande de démarrage PHP-FPM
+CMD ["php-fpm"]

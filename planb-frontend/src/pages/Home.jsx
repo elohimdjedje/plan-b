@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
-import { SearchX } from 'lucide-react';
+import { SearchX, ArrowRight } from 'lucide-react';
 import MobileContainer from '../components/layout/MobileContainer';
 import FilterBar from '../components/listing/FilterBar';
 import CategoryTabs from '../components/listing/CategoryTabs';
 import SubcategoryMenu from '../components/listing/SubcategoryMenu';
 import ListingCard from '../components/listing/ListingCard';
 import RecentSearches from '../components/listing/RecentSearches';
-import PlanBLoader from '../components/animations/PlanBLoader';
+import TopProListings from '../components/listing/TopProListings';
+import CategoryListingsCarousel from '../components/listing/CategoryListingsCarousel';
+import SkeletonCard from '../components/listing/SkeletonCard';
 import { listingsAPI } from '../api/listings';
-import { getAllListings, initializeDemoListings } from '../utils/listings';
 
 /**
  * Page d'accueil avec liste d'annonces et filtres
@@ -23,6 +24,7 @@ export default function Home() {
   const [activeSubcategory, setActiveSubcategory] = useState('');
   const [filters, setFilters] = useState({});
   const [recentSearches, setRecentSearches] = useState([]);
+
 
   // Réinitialiser les filtres quand on clique sur Accueil
   useEffect(() => {
@@ -51,16 +53,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Afficher le loader immédiatement
+    setLoading(true);
+    
     const timer = setTimeout(() => {
       loadListings();
-    }, 300); // Debounce de 300ms
+    }, 100); // Debounce réduit à 100ms
     
     return () => clearTimeout(timer);
   }, [activeCategory, activeSubcategory, filters]);
 
   const loadListings = async () => {
     try {
-      setLoading(true);
       
       // Construire les paramètres de requête
       const params = {};
@@ -210,8 +214,6 @@ export default function Home() {
 
   return (
     <MobileContainer>
-      {loading && <PlanBLoader text="Chargement des annonces..." />}
-      
       <div className="space-y-4 md:space-y-6 lg:space-y-8">
         {/* Barre de recherche */}
         <FilterBar 
@@ -233,20 +235,93 @@ export default function Home() {
           onSubcategoryChange={setActiveSubcategory}
         />
 
-        {/* Section "D'après vos dernières recherches" */}
-        <RecentSearches 
-          title="D'après vos dernières recherches"
-          searches={recentSearches}
-          onSearchClick={handleSearchClick}
-        />
+        {/* Section Top Annonces PRO - filtrées par catégorie */}
+        <div className="hidden md:block">
+          <TopProListings activeCategory={activeCategory} />
+        </div>
 
-        {/* Grille d'annonces - Responsive (2 colonnes sur mobile comme Leboncoin) */}
-        {listings.length > 0 ? (
-          <div data-results className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 lg:gap-6 pb-4">
-            {listings.map((listing, index) => (
-              <ListingCard key={listing.id} listing={listing} index={index} />
-            ))}
-          </div>
+        {/* Section "Recherches récentes" - Desktop seulement */}
+        <div className="hidden md:block">
+          <RecentSearches 
+            title="Recherches récentes"
+            searches={recentSearches}
+            onSearchClick={handleSearchClick}
+          />
+        </div>
+
+        {/* Affichage des annonces */}
+        {loading ? (
+          <>
+            {/* Mobile: Skeleton Grid */}
+            <div className="md:hidden">
+              <div className="grid grid-cols-2 gap-2 pb-24">
+                {[...Array(6)].map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            </div>
+            {/* Desktop: Skeleton Grid */}
+            <div className="hidden md:grid grid-cols-4 gap-4 pb-24">
+              {[...Array(8)].map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          </>
+        ) : listings.length > 0 ? (
+          <>
+            {/* Mobile: Grille simple 2 colonnes */}
+            <div className="md:hidden">
+              <div className="grid grid-cols-2 gap-2 pb-24">
+                {listings.map((listing, index) => (
+                  <ListingCard key={listing.id} listing={listing} index={index} />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop: Mode carrousel par catégorie (quand pas de filtre actif) */}
+            <div className="hidden md:block">
+              {activeCategory === 'all' && !Object.keys(filters).some(k => filters[k]) ? (
+                <div className="space-y-8 pb-24">
+                  {/* Carrousel Immobilier */}
+                  {listings.filter(l => l.category === 'immobilier').length > 0 && (
+                    <CategoryListingsCarousel
+                      title="Immobilier"
+                      listings={listings.filter(l => l.category === 'immobilier').slice(0, 10)}
+                      category="immobilier"
+                      onViewMore={() => setActiveCategory('immobilier')}
+                    />
+                  )}
+                  
+                  {/* Carrousel Véhicules */}
+                  {listings.filter(l => l.category === 'vehicule').length > 0 && (
+                    <CategoryListingsCarousel
+                      title="Véhicules"
+                      listings={listings.filter(l => l.category === 'vehicule').slice(0, 10)}
+                      category="vehicule"
+                      onViewMore={() => setActiveCategory('vehicule')}
+                    />
+                  )}
+                  
+                  {/* Carrousel Vacances */}
+                  {listings.filter(l => l.category === 'vacance').length > 0 && (
+                    <CategoryListingsCarousel
+                      title="Vacances"
+                      listings={listings.filter(l => l.category === 'vacance').slice(0, 10)}
+                      category="vacance"
+                      onViewMore={() => setActiveCategory('vacance')}
+                    />
+                  )}
+                </div>
+              ) : (
+                /* Mode grille (quand filtre actif) */
+                <div data-results className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-24">
+                  {listings.map((listing, index) => (
+                    <ListingCard key={listing.id} listing={listing} index={index} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         ) : !loading && (
           <div className="text-center py-12">
             <div className="flex justify-center mb-2">

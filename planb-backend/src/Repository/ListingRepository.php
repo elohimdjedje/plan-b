@@ -13,33 +13,73 @@ class ListingRepository extends ServiceEntityRepository
         parent::__construct($registry, Listing::class);
     }
 
+    /**
+     * Récupérer les annonces actives triées par score du vendeur
+     * Score = somme des vues + somme des contacts de toutes les annonces du vendeur
+     */
     public function findActiveListings(int $limit = 20, ?string $lastId = null): array
     {
         $qb = $this->createQueryBuilder('l')
-            ->leftJoin('l.owner', 'owner')
-            ->leftJoin('l.images', 'images')
-            ->addSelect('owner', 'images')
             ->where('l.status = :status')
             ->andWhere('l.expiresAt > :now')
             ->setParameter('status', 'active')
-            ->setParameter('now', new \DateTime())
-            ->orderBy('l.createdAt', 'DESC')
-            ->setMaxResults($limit);
+            ->setParameter('now', new \DateTime());
 
         if ($lastId) {
             $qb->andWhere('l.id < :lastId')
                 ->setParameter('lastId', $lastId);
         }
 
-        return $qb->getQuery()->getResult();
+        $listings = $qb->getQuery()->getResult();
+        
+        // Calculer le score pour chaque vendeur et trier
+        usort($listings, function($a, $b) {
+            $scoreA = $this->calculateSellerScore($a->getUser());
+            $scoreB = $this->calculateSellerScore($b->getUser());
+            
+            // Trier par score décroissant
+            if ($scoreB !== $scoreA) {
+                return $scoreB - $scoreA;
+            }
+            
+            // Si même score, trier par vues de l'annonce
+            if ($b->getViewsCount() !== $a->getViewsCount()) {
+                return $b->getViewsCount() - $a->getViewsCount();
+            }
+            
+            // Sinon par date de création
+            return $b->getCreatedAt() <=> $a->getCreatedAt();
+        });
+
+        return array_slice($listings, 0, $limit);
+    }
+    
+    /**
+     * Calculer le score d'un vendeur (cache en mémoire pour éviter les calculs répétés)
+     */
+    private array $sellerScoreCache = [];
+    
+    private function calculateSellerScore($user): int
+    {
+        $userId = $user->getId();
+        
+        if (!isset($this->sellerScoreCache[$userId])) {
+            $score = 0;
+            foreach ($user->getListings() as $listing) {
+                $score += $listing->getViewsCount() + $listing->getContactsCount();
+            }
+            $this->sellerScoreCache[$userId] = $score;
+        }
+        
+        return $this->sellerScoreCache[$userId];
     }
 
+    /**
+     * Rechercher des annonces triées par score du vendeur
+     */
     public function searchListings(array $filters, int $limit = 20): array
     {
         $qb = $this->createQueryBuilder('l')
-            ->leftJoin('l.owner', 'owner')
-            ->leftJoin('l.images', 'images')
-            ->addSelect('owner', 'images')
             ->where('l.status = :status')
             ->setParameter('status', 'active');
 
@@ -84,7 +124,41 @@ class ListingRepository extends ServiceEntityRepository
                 ->setParameter('priceMax', $filters['priceMax']);
         }
 
-        return $qb->orderBy('l.createdAt', 'DESC')
+        $listings = $qb->getQuery()->getResult();
+        
+        // Trier par score du vendeur
+        usort($listings, function($a, $b) {
+            $scoreA = $this->calculateSellerScore($a->getUser());
+            $scoreB = $this->calculateSellerScore($b->getUser());
+            
+            if ($scoreB !== $scoreA) {
+                return $scoreB - $scoreA;
+            }
+            
+            if ($b->getViewsCount() !== $a->getViewsCount()) {
+                return $b->getViewsCount() - $a->getViewsCount();
+            }
+            
+            return $b->getCreatedAt() <=> $a->getCreatedAt();
+        });
+
+        return array_slice($listings, 0, $limit);
+    }
+
+    /**
+     * Récupérer les annonces des vendeurs PRO
+     */
+    public function findProListings(int $limit = 10): array
+    {
+        return $this->createQueryBuilder('l')
+            ->join('l.user', 'u')
+            ->where('l.status = :status')
+            ->andWhere('l.expiresAt > :now')
+            ->andWhere('u.accountType = :accountType')
+            ->setParameter('status', 'active')
+            ->setParameter('now', new \DateTime())
+            ->setParameter('accountType', 'PRO')
+            ->orderBy('l.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

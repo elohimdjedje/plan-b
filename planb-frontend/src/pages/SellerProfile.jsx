@@ -43,12 +43,24 @@ export default function SellerProfile() {
         // Charger les vraies données depuis l'API
         const data = await usersAPI.getPublicProfile(userId);
         
+        // Chercher les contacts dans les annonces si pas dans le profil
+        const listings = data.listings || [];
+        let fallbackPhone = null;
+        let fallbackWhatsapp = null;
+        
+        for (const listing of listings) {
+          if (!fallbackPhone && listing.contactPhone) fallbackPhone = listing.contactPhone;
+          if (!fallbackWhatsapp && listing.contactWhatsapp) fallbackWhatsapp = listing.contactWhatsapp;
+          if (fallbackPhone && fallbackWhatsapp) break;
+        }
+
         setSeller({
           id: data.user.id,
           name: data.user.fullName,
           firstName: data.user.firstName,
-          phone: data.user.phone || null,
-          whatsappPhone: data.user.whatsappPhone || null,
+          lastName: data.user.lastName,
+          phone: data.user.phone || fallbackPhone,
+          whatsappPhone: data.user.whatsappPhone || fallbackWhatsapp,
           accountType: data.user.accountType,
           isPro: data.user.isPro,
           memberSince: data.user.memberSince,
@@ -62,7 +74,7 @@ export default function SellerProfile() {
           reviewsCount: data.user.reviewsCount || 0
         });
 
-        setListings(data.listings || []);
+        setListings(listings);
         
       } catch (error) {
         console.error('Erreur chargement profil vendeur:', error);
@@ -272,7 +284,23 @@ export default function SellerProfile() {
           {filteredListings.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {filteredListings.map((listing, index) => (
-                <ListingCard key={listing.id} listing={listing} index={index} />
+                <ListingCard 
+                  key={listing.id} 
+                  listing={{
+                    ...listing,
+                    user: {
+                      id: seller.id,
+                      firstName: seller.firstName,
+                      lastName: seller.lastName,
+                      name: seller.name,
+                      isPro: seller.isPro,
+                      averageRating: seller.averageRating,
+                      reviewsCount: seller.reviewsCount
+                    }
+                  }} 
+                  index={index}
+                  compact
+                />
               ))}
             </div>
           ) : (

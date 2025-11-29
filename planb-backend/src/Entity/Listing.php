@@ -52,7 +52,7 @@ class Listing
     private ?string $price = null;
 
     #[ORM\Column(length: 10, nullable: true)]
-    #[Assert\Choice(choices: ['mois', 'heure'], message: 'Unité de prix invalide')]
+    #[Assert\Choice(choices: ['mois', 'jour', 'heure'], message: 'Unité de prix invalide')]
     private ?string $priceUnit = 'mois';
 
     #[ORM\Column(length: 3)]

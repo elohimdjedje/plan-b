@@ -1,6 +1,14 @@
 # Use the front controller as index file
 DirectoryIndex index.php
 
+# Augmenter les limites PHP pour l'upload
+<IfModule mod_php.c>
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
 # Disable MultiViews to prevent unexpected file matching
 <IfModule mod_negotiation.c>
     Options -MultiViews
