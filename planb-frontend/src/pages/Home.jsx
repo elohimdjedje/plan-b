@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
-import { SearchX, ArrowRight } from 'lucide-react';
+import { SearchX, ArrowRight, LayoutGrid } from 'lucide-react';
 import MobileContainer from '../components/layout/MobileContainer';
 import FilterBar from '../components/listing/FilterBar';
 import CategoryTabs from '../components/listing/CategoryTabs';
@@ -236,9 +236,7 @@ export default function Home() {
         />
 
         {/* Section Top Annonces PRO - filtrées par catégorie */}
-        <div className="hidden md:block">
-          <TopProListings activeCategory={activeCategory} />
-        </div>
+        <TopProListings activeCategory={activeCategory} />
 
         {/* Section "Recherches récentes" - Desktop seulement */}
         <div className="hidden md:block">
@@ -247,6 +245,29 @@ export default function Home() {
             searches={recentSearches}
             onSearchClick={handleSearchClick}
           />
+        </div>
+
+        {/* Séparateur stylé + Titre section annonces */}
+        <div className="relative py-2">
+          {/* Ligne dégradée */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-secondary-300 to-transparent" />
+        </div>
+        
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg">
+            <LayoutGrid size={18} className="text-white" />
+          </div>
+          <h2 className="text-base md:text-lg font-bold text-secondary-900">
+            {activeCategory === 'all' ? 'Toutes les annonces' : 
+             activeCategory === 'immobilier' ? 'Immobilier' :
+             activeCategory === 'vehicule' ? 'Véhicules' :
+             activeCategory === 'emploi' ? 'Emploi & Services' :
+             activeCategory === 'mode' ? 'Mode' :
+             activeCategory === 'electronique' ? 'Électronique' :
+             activeCategory === 'maison' ? 'Maison' :
+             activeCategory === 'loisirs' ? 'Loisirs' :
+             activeCategory === 'vacance' ? 'Vacances' : 'Annonces'}
+          </h2>
         </div>
 
         {/* Affichage des annonces */}

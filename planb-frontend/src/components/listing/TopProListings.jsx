@@ -201,20 +201,6 @@ export default function TopProListings({ activeCategory = 'all' }) {
           ))
         )}
       </div>
-
-      {/* Indicateur de défilement sur mobile */}
-      <div className="flex justify-center mt-2 md:hidden">
-        <div className="flex gap-1">
-          {proListings.slice(0, 5).map((_, i) => (
-            <div 
-              key={i} 
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                i === 0 ? 'bg-primary-500' : 'bg-secondary-300'
-              }`} 
-            />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

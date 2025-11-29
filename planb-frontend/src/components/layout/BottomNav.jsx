@@ -1,4 +1,4 @@
-import { Home, PlusCircle, User } from 'lucide-react';
+import { Home, PlusCircle, User, LogIn } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -7,16 +7,24 @@ import { motion } from 'framer-motion';
  */
 export default function BottomNav() {
   const location = useLocation();
+  const isLoggedIn = !!localStorage.getItem('planb_token');
   
   const tabs = [
     { path: '/', icon: Home, label: 'Accueil' },
     { path: '/publish', icon: PlusCircle, label: 'Publier' },
-    { path: '/profile', icon: User, label: 'Profil' },
+    { 
+      path: isLoggedIn ? '/profile' : '/auth', 
+      icon: isLoggedIn ? User : LogIn, 
+      label: isLoggedIn ? 'Profil' : 'Connexion' 
+    },
   ];
 
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/';
+    }
+    if (path === '/auth') {
+      return location.pathname.startsWith('/auth');
     }
     return location.pathname.startsWith(path);
   };
