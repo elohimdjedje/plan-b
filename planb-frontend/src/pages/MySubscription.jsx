@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Crown, Calendar, CreditCard, Lock, Unlock, AlertCircle, CheckCircle2 } from 'lucide-react';
-import MobileContainer from '../components/layout/MobileContainer';
 import GlassCard from '../components/common/GlassCard';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
+import BottomNav from '../components/layout/BottomNav';
 import { 
   getDaysRemaining, 
   canRenewSubscription, 
@@ -132,21 +132,22 @@ export default function MySubscription() {
   const currentStatus = statusConfig[subscription.status] || statusConfig.active;
 
   return (
-    <MobileContainer 
-      headerProps={{ 
-        showLogo: false, 
-        title: 'Mon Abonnement',
-        leftAction: (
-          <button
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-blue-50 to-white">
+      {/* Header avec bouton retour */}
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-secondary-200 px-4 py-3">
+        <div className="max-w-md mx-auto flex items-center gap-4">
+          <button 
             onClick={() => navigate('/profile')}
             className="p-2 hover:bg-secondary-100 rounded-xl transition-colors"
           >
-            <ArrowLeft size={24} className="text-secondary-700" />
+            <ArrowLeft size={24} className="text-secondary-900" />
           </button>
-        )
-      }}
-    >
-      <div className="space-y-4 pb-8">
+          <h1 className="text-lg font-bold text-secondary-900">Mon Abonnement</h1>
+        </div>
+      </div>
+
+      {/* Contenu */}
+      <div className="max-w-md mx-auto px-4 py-6 pb-24 space-y-4">
           {/* Statut de l'abonnement */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -290,6 +291,9 @@ export default function MySubscription() {
             )}
           </div>
       </div>
-    </MobileContainer>
+
+      {/* Navigation Bottom */}
+      <BottomNav />
+    </div>
   );
 }

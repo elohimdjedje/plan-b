@@ -60,6 +60,7 @@ export default function Favorites() {
   if (loading) {
     return (
       <MobileContainer
+        showHeader={true}
         headerProps={{
           showLogo: false,
           title: 'Mes Favoris',
@@ -82,6 +83,7 @@ export default function Favorites() {
 
   return (
     <MobileContainer
+      showHeader={true}
       headerProps={{
         showLogo: false,
         title: 'Mes Favoris',

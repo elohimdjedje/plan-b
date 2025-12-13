@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, Star, MessageCircle, Phone, MessageSquare, Mail, RefreshCw } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Star, MessageCircle, RefreshCw } from 'lucide-react';
 import MobileContainer from '../components/layout/MobileContainer';
 import GlassCard from '../components/common/GlassCard';
 import Avatar from '../components/common/Avatar';
@@ -49,26 +49,15 @@ export default function SellerProfile() {
       // Charger les vraies données depuis l'API
       const data = await usersAPI.getPublicProfile(userId);
 
-      // Chercher les contacts dans les annonces si pas dans le profil
+      // On utilise UNIQUEMENT les infos du profil (pas des annonces)
       const listings = data.listings || [];
-      let fallbackPhone = null;
-      let fallbackWhatsapp = null;
-
-
-      for (const listing of listings) {
-        if (!fallbackPhone && listing.contactPhone) fallbackPhone = listing.contactPhone;
-        if (!fallbackWhatsapp && listing.contactWhatsapp) fallbackWhatsapp = listing.contactWhatsapp;
-        if (fallbackPhone && fallbackWhatsapp) break;
-      }
 
       setSeller({
         id: data.user.id,
         name: data.user.fullName,
         firstName: data.user.firstName,
         lastName: data.user.lastName,
-        phone: data.user.phone || fallbackPhone,
-        whatsappPhone: data.user.whatsappPhone || fallbackWhatsapp,
-        email: data.user.email || listings.find(l => l.contactEmail)?.contactEmail,
+        whatsappPhone: data.user.whatsappPhone, // Uniquement le WhatsApp du profil
         accountType: data.user.accountType,
         isPro: data.user.isPro,
         memberSince: data.user.memberSince,
@@ -223,67 +212,24 @@ export default function SellerProfile() {
             </div>
           )}
 
-          {/* Boutons de contact */}
-          {(seller.phone || seller.whatsappPhone || seller.email) ? (
-            <div className="pt-4 flex flex-wrap gap-2">
-              {/* WhatsApp */}
-              {seller.whatsappPhone && (
-                <button
-                  onClick={() => {
-                    const message = `Bonjour ${seller.firstName}, je suis intéressé par vos annonces sur Plan B.`;
-                    openWhatsApp(seller.whatsappPhone, message);
-                  }}
-                  className="flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-4 bg-green-500/10 hover:bg-green-500/20 text-green-700 border border-green-500/30 rounded-xl transition-all"
-                >
-                  <MessageCircle size={18} />
-                  <span className="text-sm font-medium">WhatsApp</span>
-                </button>
-              )}
-
-              {/* Email */}
-              {seller.email && (
-                <button
-                  onClick={() => {
-                    const subject = `Contact depuis Plan B - ${seller.name}`;
-                    const body = `Bonjour ${seller.firstName},\n\nJe suis intéressé par vos annonces sur Plan B.\n\nCordialement`;
-                    window.location.href = `mailto:${seller.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                  }}
-                  className="flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 border border-orange-500/30 rounded-xl transition-all"
-                >
-                  <Mail size={18} />
-                  <span className="text-sm font-medium">Email</span>
-                </button>
-              )}
-
-              {/* Appeler */}
-              {seller.phone && (
-                <button
-                  onClick={() => window.location.href = `tel:${seller.phone}`}
-                  className="flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 border border-blue-500/30 rounded-xl transition-all"
-                >
-                  <Phone size={18} />
-                  <span className="text-sm font-medium">Appeler</span>
-                </button>
-              )}
-
-              {/* SMS */}
-              {seller.phone && (
-                <button
-                  onClick={() => {
-                    const message = `Bonjour ${seller.firstName}, je suis intéressé par vos annonces sur Plan B.`;
-                    window.location.href = `sms:${seller.phone}?body=${encodeURIComponent(message)}`;
-                  }}
-                  className="flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 border border-purple-500/30 rounded-xl transition-all"
-                >
-                  <MessageSquare size={18} />
-                  <span className="text-sm font-medium">SMS</span>
-                </button>
-              )}
+          {/* Bouton WhatsApp uniquement (numéro des paramètres du profil) */}
+          {seller.whatsappPhone ? (
+            <div className="pt-4">
+              <button
+                onClick={() => {
+                  const message = `Bonjour ${seller.firstName}, je suis intéressé par vos annonces sur Plan B.`;
+                  openWhatsApp(seller.whatsappPhone, message);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-lg"
+              >
+                <MessageCircle size={20} />
+                <span className="font-medium">Contacter sur WhatsApp</span>
+              </button>
             </div>
           ) : (
             <div className="pt-4">
               <p className="text-sm text-secondary-500 text-center italic">
-                Pas de numéro de contact disponible
+                Ce vendeur n'a pas renseigné de numéro WhatsApp
               </p>
             </div>
           )}

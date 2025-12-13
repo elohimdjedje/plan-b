@@ -7,7 +7,6 @@ import {
 import GlassCard from '../components/common/GlassCard';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import PhoneInput from '../components/common/PhoneInput';
 import Textarea from '../components/common/Textarea';
 import { useAuthStore } from '../store/authStore';
 import { getUserProfile, saveUserProfile } from '../utils/auth';
@@ -31,42 +30,45 @@ export default function Settings() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  // Pas de loading initial si on a déjà les données du store
+  const [initialLoading, setInitialLoading] = useState(!user);
 
-  // Charger le profil au montage
+  // Initialiser immédiatement avec les données du store
   useEffect(() => {
-    const loadProfile = async () => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        whatsapp: user.whatsappPhone || '',
+        bio: user.bio || '',
+      });
+      setInitialLoading(false);
+    }
+  }, [user]);
+
+  // Rafraîchir depuis l'API en arrière-plan (sans bloquer l'affichage)
+  useEffect(() => {
+    const refreshFromApi = async () => {
       try {
-        // Initialiser avec les données du store d'abord (rapide)
-        if (user) {
-          setFormData({
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.email || '',
-            whatsapp: user.whatsappPhone || '',
-            bio: user.bio || '',
-          });
-        }
-        
-        // Puis rafraîchir depuis l'API (complet)
         const userProfile = await getUserProfile();
         if (userProfile) {
-          setFormData({
-            firstName: userProfile.firstName || '',
-            lastName: userProfile.lastName || '',
-            email: userProfile.email || '',
-            whatsapp: userProfile.whatsappPhone || '',
-            bio: userProfile.bio || '',
-          });
+          setFormData(prev => ({
+            firstName: userProfile.firstName || prev.firstName,
+            lastName: userProfile.lastName || prev.lastName,
+            email: userProfile.email || prev.email,
+            whatsapp: userProfile.whatsappPhone || prev.whatsapp,
+            bio: userProfile.bio || prev.bio,
+          }));
         }
       } catch (error) {
-        console.error('Erreur chargement profil:', error);
+        console.error('Erreur chargement profil API:', error);
       } finally {
         setInitialLoading(false);
       }
     };
-    loadProfile();
-  }, [user]);
+    refreshFromApi();
+  }, []);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -181,18 +183,18 @@ export default function Settings() {
           </h3>
           
           <div className="space-y-4">
-            <PhoneInput
-              label="Numéro WhatsApp"
+            <Input
+              label="Numéro WhatsApp (avec indicatif)"
               value={formData.whatsapp}
-              onChange={(value) => handleChange('whatsapp', value)}
-              placeholder="07 XX XX XX XX"
-              defaultCountry="CI"
+              onChange={(e) => handleChange('whatsapp', e.target.value)}
+              icon={<Phone size={18} />}
+              placeholder="+225 07 XX XX XX XX"
             />
             
             <div className="bg-green-50 border border-green-200 rounded-xl p-3">
               <p className="text-xs text-green-700 flex items-start gap-2">
                 <MessageCircle size={16} className="flex-shrink-0 mt-0.5" />
-                <span>Les acheteurs vous contacteront sur ce numéro pour discuter de vos annonces</span>
+                <span>Saisissez votre numéro complet avec l'indicatif pays (ex: +225 pour la Côte d'Ivoire)</span>
               </p>
             </div>
           </div>

@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Repository\ReviewRepository;
 use App\Repository\ListingRepository;
 use App\Repository\UserRepository;
+use App\Service\NotificationManagerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,7 +24,8 @@ class ReviewController extends AbstractController
         private ReviewRepository $reviewRepository,
         private ListingRepository $listingRepository,
         private UserRepository $userRepository,
-        private ValidatorInterface $validator
+        private ValidatorInterface $validator,
+        private NotificationManagerService $notificationManager
     ) {
     }
 
@@ -101,6 +103,15 @@ class ReviewController extends AbstractController
         try {
             $this->entityManager->persist($review);
             $this->entityManager->flush();
+
+            // Notifier le vendeur qu'il a reçu un nouvel avis
+            $this->notificationManager->notifyReviewReceived(
+                $review->getSeller(),
+                $review->getReviewer(),
+                $review->getRating(),
+                $review->getComment() ?? '',
+                $review->getListing()
+            );
 
             return $this->json([
                 'message' => 'Avis ajouté avec succès',

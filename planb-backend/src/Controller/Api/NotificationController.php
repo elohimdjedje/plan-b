@@ -3,7 +3,10 @@
 namespace App\Controller\Api;
 
 use App\Entity\Notification;
+use App\Entity\NotificationPreference;
 use App\Repository\NotificationRepository;
+use App\Repository\NotificationPreferenceRepository;
+use App\Service\NotificationManagerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,18 +15,24 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/api/notifications')]
+#[Route('/api/v1/notifications')]
 #[IsGranted('ROLE_USER')]
 class NotificationController extends AbstractController
 {
     private NotificationRepository $notificationRepository;
+    private NotificationPreferenceRepository $preferenceRepository;
+    private NotificationManagerService $notificationManager;
     private EntityManagerInterface $entityManager;
 
     public function __construct(
         NotificationRepository $notificationRepository,
+        NotificationPreferenceRepository $preferenceRepository,
+        NotificationManagerService $notificationManager,
         EntityManagerInterface $entityManager
     ) {
         $this->notificationRepository = $notificationRepository;
+        $this->preferenceRepository = $preferenceRepository;
+        $this->notificationManager = $notificationManager;
         $this->entityManager = $entityManager;
     }
 
@@ -138,6 +147,157 @@ class NotificationController extends AbstractController
         return $this->json([
             'success' => true,
             'message' => 'Notification supprimée'
+        ]);
+    }
+
+    /**
+     * Archive une notification
+     */
+    #[Route('/{id}/archive', name: 'api_notifications_archive', methods: ['POST'])]
+    public function archive(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        $notification = $this->notificationRepository->find($id);
+
+        if (!$notification || $notification->getUser() !== $user) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Notification introuvable'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $notification->setStatus('archived');
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Notification archivée'
+        ]);
+    }
+
+    /**
+     * Récupère les préférences de notification de l'utilisateur
+     */
+    #[Route('/preferences', name: 'api_notifications_preferences_get', methods: ['GET'])]
+    public function getPreferences(): JsonResponse
+    {
+        $user = $this->getUser();
+        $prefs = $this->notificationManager->getOrCreatePreferences($user);
+
+        return $this->json([
+            'success' => true,
+            'data' => [
+                'favoritesRemoved' => $prefs->isFavoritesRemoved(),
+                'listingExpired' => $prefs->isListingExpired(),
+                'subscriptionExpiring' => $prefs->isSubscriptionExpiring(),
+                'reviewReceived' => $prefs->isReviewReceived(),
+                'reviewNegativeOnly' => $prefs->isReviewNegativeOnly(),
+                'emailEnabled' => $prefs->isEmailEnabled(),
+                'pushEnabled' => $prefs->isPushEnabled(),
+                'emailFrequency' => $prefs->getEmailFrequency(),
+                'doNotDisturbStart' => $prefs->getDoNotDisturbStart()?->format('H:i'),
+                'doNotDisturbEnd' => $prefs->getDoNotDisturbEnd()?->format('H:i')
+            ]
+        ]);
+    }
+
+    /**
+     * Met à jour les préférences de notification
+     */
+    #[Route('/preferences', name: 'api_notifications_preferences_update', methods: ['PUT', 'PATCH'])]
+    public function updatePreferences(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $prefs = $this->notificationManager->getOrCreatePreferences($user);
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['favoritesRemoved'])) {
+            $prefs->setFavoritesRemoved((bool) $data['favoritesRemoved']);
+        }
+        if (isset($data['listingExpired'])) {
+            $prefs->setListingExpired((bool) $data['listingExpired']);
+        }
+        if (isset($data['subscriptionExpiring'])) {
+            $prefs->setSubscriptionExpiring((bool) $data['subscriptionExpiring']);
+        }
+        if (isset($data['reviewReceived'])) {
+            $prefs->setReviewReceived((bool) $data['reviewReceived']);
+        }
+        if (isset($data['reviewNegativeOnly'])) {
+            $prefs->setReviewNegativeOnly((bool) $data['reviewNegativeOnly']);
+        }
+        if (isset($data['emailEnabled'])) {
+            $prefs->setEmailEnabled((bool) $data['emailEnabled']);
+        }
+        if (isset($data['pushEnabled'])) {
+            $prefs->setPushEnabled((bool) $data['pushEnabled']);
+        }
+        if (isset($data['emailFrequency'])) {
+            $validFrequencies = ['immediate', 'daily', 'weekly'];
+            if (in_array($data['emailFrequency'], $validFrequencies)) {
+                $prefs->setEmailFrequency($data['emailFrequency']);
+            }
+        }
+        if (isset($data['doNotDisturbStart'])) {
+            $prefs->setDoNotDisturbStart(
+                $data['doNotDisturbStart'] ? new \DateTime($data['doNotDisturbStart']) : null
+            );
+        }
+        if (isset($data['doNotDisturbEnd'])) {
+            $prefs->setDoNotDisturbEnd(
+                $data['doNotDisturbEnd'] ? new \DateTime($data['doNotDisturbEnd']) : null
+            );
+        }
+
+        $prefs->setUpdatedAt(new \DateTime());
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Préférences mises à jour'
+        ]);
+    }
+
+    /**
+     * Récupère les statistiques des notifications
+     */
+    #[Route('/stats', name: 'api_notifications_stats', methods: ['GET'])]
+    public function getStats(): JsonResponse
+    {
+        $user = $this->getUser();
+
+        $unreadCount = $this->notificationRepository->countUnread($user);
+        
+        $allNotifications = $this->notificationRepository->findByUser($user, null, 100);
+        
+        $stats = [
+            'unread' => $unreadCount,
+            'total' => count($allNotifications),
+            'byType' => [],
+            'byPriority' => [
+                'urgent' => 0,
+                'high' => 0,
+                'medium' => 0,
+                'low' => 0
+            ]
+        ];
+
+        foreach ($allNotifications as $notif) {
+            $type = $notif->getType();
+            if (!isset($stats['byType'][$type])) {
+                $stats['byType'][$type] = 0;
+            }
+            $stats['byType'][$type]++;
+
+            $priority = $notif->getPriority();
+            if (isset($stats['byPriority'][$priority])) {
+                $stats['byPriority'][$priority]++;
+            }
+        }
+
+        return $this->json([
+            'success' => true,
+            'data' => $stats
         ]);
     }
 }

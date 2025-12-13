@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Home, PlusCircle, User, LogIn, MapPin, Bell } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getUnreadNotificationsCount } from '../../utils/notifications';
+import { getUnreadCount } from '../../api/notifications';
 
 /**
  * Navigation Bottom avec 3 onglets et animation iOS
@@ -18,10 +18,27 @@ export default function BottomNav() {
     setIsLoggedIn(!!localStorage.getItem('token'));
   }, [location.pathname]);
 
-  // Charger le nombre de notifications
+  // Charger le nombre de notifications depuis l'API
   useEffect(() => {
-    const count = getUnreadNotificationsCount();
-    setUnreadCount(count);
+    const fetchUnreadCount = async () => {
+      if (!localStorage.getItem('token')) {
+        setUnreadCount(0);
+        return;
+      }
+      try {
+        const response = await getUnreadCount();
+        setUnreadCount(response.count || 0);
+      } catch (error) {
+        // Silently fail - user might not be logged in
+        setUnreadCount(0);
+      }
+    };
+    
+    fetchUnreadCount();
+    
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, [location.pathname]);
 
   // Écouter les changements de storage (connexion/déconnexion)

@@ -75,6 +75,11 @@ class UserController extends AbstractController
             $user->setBio($data['bio']);
         }
 
+        // Ajouter le support du numéro WhatsApp
+        if (isset($data['whatsappPhone'])) {
+            $user->setWhatsappPhone($data['whatsappPhone']);
+        }
+
         // Validation
         $errors = $this->validator->validate($user);
         if (count($errors) > 0) {
@@ -94,6 +99,7 @@ class UserController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'phone' => $user->getPhone(),
+                'whatsappPhone' => $user->getWhatsappPhone(),
                 'firstName' => $user->getFirstName(),
                 'lastName' => $user->getLastName(),
                 'fullName' => $user->getFullName(),

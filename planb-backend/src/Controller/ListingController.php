@@ -8,6 +8,7 @@ use App\Entity\Image;
 use App\Repository\ListingRepository;
 use App\Repository\ReviewRepository;
 use App\Service\ViewCounterService;
+use App\Service\NotificationManagerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +25,8 @@ class ListingController extends AbstractController
         private ValidatorInterface $validator,
         private ListingRepository $listingRepository,
         private ViewCounterService $viewCounterService,
-        private ReviewRepository $reviewRepository
+        private ReviewRepository $reviewRepository,
+        private NotificationManagerService $notificationManager
     ) {
     }
 
@@ -232,6 +234,9 @@ class ListingController extends AbstractController
             $this->entityManager->persist($listing);
             $this->entityManager->flush();
 
+            // Notifier l'utilisateur que son annonce a été publiée
+            $this->notificationManager->notifyListingPublished($listing);
+
             return $this->json([
                 'message' => 'Annonce créée avec succès',
                 'data' => $this->serializeListing($listing, true)
@@ -284,7 +289,14 @@ class ListingController extends AbstractController
         
         // ✅ AJOUT: Gérer le changement de statut (vendu/occupé)
         if (isset($data['status'])) {
-            $listing->setStatus($data['status']);
+            $oldStatus = $listing->getStatus();
+            $newStatus = $data['status'];
+            $listing->setStatus($newStatus);
+            
+            // Notifier les utilisateurs qui ont cette annonce en favori
+            if ($oldStatus !== $newStatus && in_array($newStatus, ['sold', 'expired', 'suspended'])) {
+                $this->notificationManager->notifyFavoriteUnavailable($listing, $newStatus);
+            }
         }
         
         // ✅ AJOUT: Gérer les champs de localisation
@@ -348,6 +360,9 @@ class ListingController extends AbstractController
         if ($listing->getUser()->getId() !== $user->getId()) {
             return $this->json(['error' => 'Accès refusé'], Response::HTTP_FORBIDDEN);
         }
+
+        // Notifier les utilisateurs qui ont cette annonce en favori AVANT suppression
+        $this->notificationManager->notifyFavoriteUnavailable($listing, 'deleted');
 
         $this->entityManager->remove($listing);
         $this->entityManager->flush();
