@@ -18,6 +18,15 @@ class UploadController extends AbstractController
     #[Route('/upload', name: 'upload_images', methods: ['POST'])]
     public function uploadImages(Request $request): JsonResponse
     {
+        // ✅ Vérifier que l'utilisateur est authentifié
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json([
+                'error' => 'Non authentifié',
+                'message' => 'Vous devez être connecté pour uploader des images'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+        
         try {
             // Récupérer tous les fichiers - gérer images[] ou fichiers directs
             $uploadedFiles = $request->files->all();
@@ -109,6 +118,15 @@ class UploadController extends AbstractController
     #[Route('/upload/{filename}', name: 'delete_image', methods: ['DELETE'])]
     public function deleteImage(string $filename): JsonResponse
     {
+        // ✅ Vérifier que l'utilisateur est authentifié
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json([
+                'error' => 'Non authentifié',
+                'message' => 'Vous devez être connecté pour supprimer des images'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+        
         try {
             $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/listings';
             $filePath = $uploadDir . '/' . $filename;

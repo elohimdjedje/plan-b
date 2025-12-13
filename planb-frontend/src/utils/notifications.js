@@ -3,12 +3,20 @@
  * Suit les changements de statut des annonces favorites
  */
 
-import { getCurrentUser } from './auth';
-
 // Clés localStorage
 const NOTIFICATIONS_KEY = 'planb_notifications';
 const FAVORITES_KEY = 'planb_favorites';
 const FAVORITES_SNAPSHOT_KEY = 'planb_favorites_snapshot';
+
+/**
+ * Obtenir l'utilisateur actuel depuis le store (synchrone, sans API)
+ */
+const getCurrentUserSync = () => {
+  if (typeof window !== 'undefined' && window.useAuthStore) {
+    return window.useAuthStore.getState().user;
+  }
+  return null;
+};
 
 /**
  * Obtenir toutes les notifications
@@ -38,7 +46,7 @@ const saveNotifications = (notifications) => {
  * Créer une nouvelle notification
  */
 export const createNotification = (type, listingId, listingTitle, oldStatus, newStatus) => {
-  const currentUser = getCurrentUser();
+  const currentUser = getCurrentUserSync();
   if (!currentUser) return;
 
   const notifications = getNotifications();
@@ -130,7 +138,7 @@ export const clearAllNotifications = () => {
  * Obtenir le nombre de notifications non lues
  */
 export const getUnreadNotificationsCount = () => {
-  const currentUser = getCurrentUser();
+  const currentUser = getCurrentUserSync();
   if (!currentUser) return 0;
   
   const notifications = getNotifications();
@@ -141,7 +149,7 @@ export const getUnreadNotificationsCount = () => {
  * Obtenir les notifications de l'utilisateur actuel
  */
 export const getUserNotifications = () => {
-  const currentUser = getCurrentUser();
+  const currentUser = getCurrentUserSync();
   if (!currentUser) return [];
   
   const notifications = getNotifications();
@@ -153,7 +161,7 @@ export const getUserNotifications = () => {
  */
 export const getFavorites = () => {
   try {
-    const currentUser = getCurrentUser();
+    const currentUser = getCurrentUserSync();
     if (!currentUser) return [];
     
     const favorites = localStorage.getItem(FAVORITES_KEY);
@@ -170,7 +178,7 @@ export const getFavorites = () => {
  */
 export const saveFavoritesSnapshot = (listingsData) => {
   try {
-    const currentUser = getCurrentUser();
+    const currentUser = getCurrentUserSync();
     if (!currentUser) return;
     
     const snapshots = localStorage.getItem(FAVORITES_SNAPSHOT_KEY);
@@ -188,7 +196,7 @@ export const saveFavoritesSnapshot = (listingsData) => {
  */
 export const getFavoritesSnapshot = () => {
   try {
-    const currentUser = getCurrentUser();
+    const currentUser = getCurrentUserSync();
     if (!currentUser) return {};
     
     const snapshots = localStorage.getItem(FAVORITES_SNAPSHOT_KEY);
@@ -205,7 +213,7 @@ export const getFavoritesSnapshot = () => {
  * À appeler régulièrement ou lors du chargement de l'app
  */
 export const checkFavoritesChanges = (currentListings) => {
-  const currentUser = getCurrentUser();
+  const currentUser = getCurrentUserSync();
   if (!currentUser) return;
   
   const favorites = getFavorites();

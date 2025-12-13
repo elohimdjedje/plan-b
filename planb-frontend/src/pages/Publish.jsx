@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Check, Camera, X, Home, Car, Palmtree, Building2, DoorClosed, Trees, Store, Bike, Hotel, Lightbulb, DollarSign, Phone, MessageCircle, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -9,10 +9,12 @@ import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Textarea from '../components/common/Textarea';
 import SpecificationsForm from '../components/listing/SpecificationsForm';
+import QuotaExceededModal from '../components/modals/QuotaExceededModal';
 import { CATEGORIES, LISTING_TYPES, COUNTRIES } from '../constants/categories';
 import { CITIES_LIST, getCommunes } from '../constants/locations';
 import { useAuthStore } from '../store/authStore';
 import { listingsAPI } from '../api/listings';
+import { saveDraft, deleteDraft, getDraftById } from '../services/draftsService';
 
 // Mapping des icônes Lucide
 const IconComponents = {
@@ -32,8 +34,11 @@ const IconComponents = {
  */
 export default function Publish() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { accountType = 'FREE' } = useAuthStore();
   const [step, setStep] = useState(1);
+  const [draftId, setDraftId] = useState(null); // ID du brouillon en cours d'édition
+  const [isSubmitting, setIsSubmitting] = useState(false); // État pour éviter double-clic
   const [formData, setFormData] = useState({
     category: '',
     subcategory: '',
@@ -41,7 +46,7 @@ export default function Publish() {
     title: '',
     description: '',
     price: '',
-    priceUnit: 'mois', // Par défaut 'mois' pour les locations
+    priceUnit: 'le mois', // Par défaut 'le mois' pour les locations
     country: 'CI',
     city: '',
     commune: '',
@@ -54,8 +59,77 @@ export default function Publish() {
     specifications: {},
   });
 
-  const maxPhotos = accountType === 'PRO' ? 10 : 3;
+  // Charger un brouillon si on arrive depuis le profil
+  useEffect(() => {
+    const fromDraft = searchParams.get('from') === 'draft';
+    const id = searchParams.get('id');
+    
+    if (fromDraft && id) {
+      // Récupérer le brouillon depuis sessionStorage
+      const draftData = sessionStorage.getItem('draft_to_publish');
+      if (draftData) {
+        try {
+          const draft = JSON.parse(draftData);
+          setDraftId(draft.id);
+          setFormData({
+            category: draft.category || '',
+            subcategory: draft.subcategory || '',
+            type: draft.type || LISTING_TYPES.VENTE,
+            title: draft.title || '',
+            description: draft.description || '',
+            price: draft.price || '',
+            priceUnit: draft.priceUnit || 'le mois',
+            country: draft.country || 'CI',
+            city: draft.city || '',
+            commune: draft.commune || '',
+            quartier: draft.quartier || '',
+            phone: draft.phone || '',
+            contactPhone: draft.contactPhone || '',
+            contactWhatsapp: draft.contactWhatsapp || '',
+            contactEmail: draft.contactEmail || '',
+            images: [], // Les images ne sont pas persistées
+            specifications: draft.specifications || {},
+          });
+          toast.success('📝 Brouillon chargé ! Complétez les informations manquantes.');
+          // Nettoyer le sessionStorage
+          sessionStorage.removeItem('draft_to_publish');
+        } catch (error) {
+          console.error('Erreur chargement brouillon:', error);
+        }
+      }
+    }
+  }, [searchParams]);
+
+  // État pour le modal de quota dépassé
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [quotaInfo, setQuotaInfo] = useState({ current: 4, max: 4 });
+
+  const maxPhotos = accountType === 'PRO' ? 10 : 4;
   const totalSteps = 7;
+
+  // Fonction pour sauvegarder en brouillon
+  const handleSaveDraft = async () => {
+    try {
+      // Préparer les données du brouillon (sans upload d'images, juste les previews)
+      const draftData = {
+        ...formData,
+        // Convertir les images en format sauvegardable (juste les noms de fichiers)
+        imagesPending: formData.images.map(img => ({
+          name: img.file?.name || 'image',
+          size: img.file?.size || 0,
+          preview: img.preview
+        }))
+      };
+      
+      saveDraft(draftData);
+      toast.success('📝 Annonce sauvegardée en brouillon !');
+      return draftData;
+    } catch (error) {
+      console.error('Erreur sauvegarde brouillon:', error);
+      toast.error('Erreur lors de la sauvegarde');
+      throw error;
+    }
+  };
 
   // Fonction pour récupérer le composant d'icône
   const getIconComponent = (iconName) => {
@@ -87,20 +161,28 @@ export default function Publish() {
   };
 
   const handleSubmit = async () => {
+    // Empêcher les clics multiples
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
+      
       // Validations frontend avant envoi
       if (formData.title.length < 10) {
         toast.error('Le titre doit contenir au moins 10 caractères');
+        setIsSubmitting(false);
         return;
       }
       
       if (formData.description.length < 20) {
         toast.error('La description doit contenir au moins 20 caractères');
+        setIsSubmitting(false);
         return;
       }
       
       if (!formData.price || parseFloat(formData.price) <= 0) {
         toast.error('Le prix doit être positif');
+        setIsSubmitting(false);
         return;
       }
       
@@ -146,43 +228,49 @@ export default function Publish() {
       
       const response = await listingsAPI.createListing(listingData);
       
-      toast.dismiss();
-      toast.success('✅ Annonce publiée avec succès !');
+      // Si c'était un brouillon, le supprimer
+      if (draftId) {
+        deleteDraft(draftId);
+      }
       
-      // Petit délai avant redirection pour voir le message
-      setTimeout(() => {
-        navigate('/');
-      }, 500);
+      // Afficher le succès tout en gardant le loading visible
+      toast.dismiss();
+      toast.loading('✅ Annonce publiée ! Redirection en cours...', { duration: 2000 });
+      
+      // Attendre 1.5 secondes pour que l'utilisateur voie le message, puis rediriger
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Redirection vers la page d'accueil
+      navigate('/');
     } catch (error) {
       toast.dismiss();
-      console.error('Erreur publication:', error);
       
       // Messages d'erreur personnalisés
       let errorMessage = '';
       const errorCode = error.response?.data?.error;
       const errorData = error.response?.data;
       
-      if (errorCode === 'QUOTA_EXCEEDED') {
-        // Limite d'annonces atteinte
-        const currentListings = errorData?.currentListings || 0;
-        const maxListings = errorData?.maxListings || 3;
-        errorMessage = `⚠️ Limite atteinte ! Vous avez ${currentListings}/${maxListings} annonces actives.\n\n🌟 Passez au compte PRO pour publier sans limite !`;
+      // Ne pas logger les erreurs de quota (c'est attendu)
+      if (errorCode !== 'QUOTA_EXCEEDED' && error.response?.status !== 403) {
+        console.error('Erreur publication:', error);
+      }
+      
+      if (errorCode === 'QUOTA_EXCEEDED' || error.response?.status === 403) {
+        // Limite d'annonces atteinte - Afficher le modal
+        const currentListings = errorData?.currentListings || 4;
+        const maxListings = errorData?.maxListings || 4;
         
-        // Afficher un bouton pour passer PRO
-        toast.error(errorMessage, {
-          duration: 8000,
-          icon: '🔒',
-        });
+        setQuotaInfo({ current: currentListings, max: maxListings });
+        setShowQuotaModal(true);
+        setIsSubmitting(false);
         
-        // Rediriger vers la page d'upgrade après 3 secondes
-        setTimeout(() => {
-          if (confirm('Voulez-vous passer au compte PRO maintenant ?')) {
-            navigate('/upgrade-plan');
-          }
-        }, 3000);
+        // Pas de toast, le modal gère l'affichage
+        return;
         
       } else if (error.response?.status === 401) {
         errorMessage = '🔐 Session expirée. Veuillez vous reconnecter.';
+        toast.error(errorMessage);
+        setIsSubmitting(false);
         setTimeout(() => navigate('/auth'), 2000);
         
       } else if (error.response?.status === 400) {
@@ -215,6 +303,8 @@ export default function Publish() {
       if (errorCode !== 'QUOTA_EXCEEDED') {
         toast.error(errorMessage, { duration: 6000 });
       }
+      
+      setIsSubmitting(false);
     }
   };
 
@@ -378,7 +468,7 @@ export default function Publish() {
                 <h2 className="text-xl font-bold mb-2">Ajouter des photos</h2>
                 <p className="text-sm text-secondary-600 mb-4">
                   {formData.images.length}/{maxPhotos} photos
-                  {accountType === 'FREE' && ' (Max 3 pour compte FREE)'}
+                  {accountType === 'FREE' && ' (Max 4 pour compte FREE)'}
                 </p>
 
                 <div className="grid grid-cols-3 gap-3 mb-4">
@@ -464,9 +554,10 @@ export default function Publish() {
                           value={formData.priceUnit}
                           onChange={(e) => handleChange('priceUnit', e.target.value)}
                           options={[
-                            { value: 'mois', label: '/mois' },
-                            { value: 'jour', label: '/jour' },
-                            { value: 'heure', label: '/heure' }
+                            { value: 'le mois', label: '/le mois' },
+                            { value: 'la jour', label: '/la jour' },
+                            { value: "l'heure", label: "/l'heure" },
+                            ...(formData.category === 'vacance' ? [{ value: 'la nuit', label: '/la nuit' }] : [])
                           ]}
                           className="w-32"
                         />
@@ -666,13 +757,33 @@ export default function Publish() {
             <Button
               variant="primary"
               onClick={handleSubmit}
-              className="flex-1"
+              disabled={isSubmitting}
+              className={`flex-1 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Publier l'annonce
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Publication...
+                </span>
+              ) : (
+                "Publier l'annonce"
+              )}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Modal de quota dépassé */}
+      <QuotaExceededModal
+        isOpen={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        currentListings={quotaInfo.current}
+        maxListings={quotaInfo.max}
+        onSaveDraft={handleSaveDraft}
+      />
     </div>
   );
 }

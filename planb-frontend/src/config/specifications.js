@@ -28,6 +28,36 @@ export const SPECIFICATIONS_CONFIG = {
       { key: 'hasInternet', label: 'Internet/Wifi', type: 'boolean', icon: 'Wifi' },
       { key: 'hasSecurity', label: 'Gardien/Sécurité', type: 'boolean', icon: 'Shield' },
     ],
+    // Villa (alias vers maison)
+    villa: [
+      { key: 'propertyType', label: 'Type de villa', type: 'select', icon: 'Home', options: ['Villa simple', 'Villa duplex', 'Villa avec piscine', 'Villa basse', 'Villa R+1'] },
+      { key: 'surface', label: 'Surface habitable', type: 'number', unit: 'm²', icon: 'Ruler' },
+      { key: 'landSurface', label: 'Surface terrain', type: 'number', unit: 'm²', icon: 'Trees' },
+      { key: 'rooms', label: 'Nombre de pièces', type: 'number', icon: 'Home' },
+      { key: 'bedrooms', label: 'Chambres', type: 'number', icon: 'Bed' },
+      { key: 'bathrooms', label: 'Salles de bain', type: 'number', icon: 'Bath' },
+      { key: 'toilets', label: 'Toilettes', type: 'number', icon: 'Bath' },
+      { key: 'hasGarage', label: 'Garage', type: 'boolean', icon: 'ParkingCircle' },
+      { key: 'hasGarden', label: 'Jardin/Cour', type: 'boolean', icon: 'Trees' },
+      { key: 'hasPool', label: 'Piscine', type: 'boolean', icon: 'Droplets' },
+      { key: 'hasAC', label: 'Climatisation', type: 'boolean', icon: 'Wind' },
+      { key: 'hasWater', label: 'Eau courante', type: 'boolean', icon: 'Droplets' },
+      { key: 'hasElectricity', label: 'Électricité', type: 'boolean', icon: 'Zap' },
+      { key: 'isFurnished', label: 'Meublé', type: 'boolean', icon: 'Tv' },
+      { key: 'hasSecurity', label: 'Gardien/Sécurité', type: 'boolean', icon: 'Shield' },
+    ],
+    // Studio
+    studio: [
+      { key: 'surface', label: 'Surface', type: 'number', unit: 'm²', icon: 'Ruler' },
+      { key: 'floor', label: 'Étage', type: 'number', icon: 'Building' },
+      { key: 'hasAC', label: 'Climatisation', type: 'boolean', icon: 'Wind' },
+      { key: 'hasWater', label: 'Eau courante', type: 'boolean', icon: 'Droplets' },
+      { key: 'hasElectricity', label: 'Électricité', type: 'boolean', icon: 'Zap' },
+      { key: 'isFurnished', label: 'Meublé', type: 'boolean', icon: 'Tv' },
+      { key: 'hasInternet', label: 'Internet/Wifi', type: 'boolean', icon: 'Wifi' },
+      { key: 'hasParking', label: 'Parking', type: 'boolean', icon: 'ParkingCircle' },
+      { key: 'hasSecurity', label: 'Gardien/Sécurité', type: 'boolean', icon: 'Shield' },
+    ],
     // Maison
     maison: [
       { key: 'propertyType', label: 'Type de bien', type: 'select', icon: 'Home', options: ['Maison', 'Villa', 'Duplex', 'Résidence'] },
@@ -55,9 +85,9 @@ export const SPECIFICATIONS_CONFIG = {
       { key: 'hasRoad', label: 'Accès route bitumée', type: 'boolean', icon: 'MapPin' },
       { key: 'hasTitle', label: 'Titre foncier (ACD)', type: 'boolean', icon: 'Shield' },
     ],
-    // Bureau / Commerce
+    // Bureau
     bureau: [
-      { key: 'propertyType', label: 'Type', type: 'select', icon: 'Building', options: ['Bureau', 'Commerce', 'Entrepôt', 'Local commercial'] },
+      { key: 'propertyType', label: 'Type', type: 'select', icon: 'Building', options: ['Bureau', 'Open space', 'Coworking', 'Salle de réunion'] },
       { key: 'surface', label: 'Surface', type: 'number', unit: 'm²', icon: 'Ruler' },
       { key: 'rooms', label: 'Nombre de pièces', type: 'number', icon: 'Home' },
       { key: 'floor', label: 'Étage', type: 'number', icon: 'Building' },
@@ -65,6 +95,31 @@ export const SPECIFICATIONS_CONFIG = {
       { key: 'hasParking', label: 'Parking', type: 'boolean', icon: 'ParkingCircle' },
       { key: 'hasInternet', label: 'Internet', type: 'boolean', icon: 'Wifi' },
       { key: 'hasSecurity', label: 'Sécurité', type: 'boolean', icon: 'Shield' },
+    ],
+    // Magasin / Commerce
+    magasin: [
+      { key: 'propertyType', label: 'Type de commerce', type: 'select', icon: 'Building', options: ['Magasin', 'Boutique', 'Superette', 'Entrepôt', 'Local commercial', 'Showroom'] },
+      { key: 'surface', label: 'Surface', type: 'number', unit: 'm²', icon: 'Ruler' },
+      { key: 'storageSurface', label: 'Surface stockage', type: 'number', unit: 'm²', icon: 'Package' },
+      { key: 'frontage', label: 'Longueur façade', type: 'number', unit: 'm', icon: 'Ruler' },
+      { key: 'hasVitrine', label: 'Vitrine', type: 'boolean', icon: 'Sun' },
+      { key: 'hasToilets', label: 'Toilettes', type: 'boolean', icon: 'Bath' },
+      { key: 'hasAC', label: 'Climatisation', type: 'boolean', icon: 'Wind' },
+      { key: 'hasParking', label: 'Parking', type: 'boolean', icon: 'ParkingCircle' },
+      { key: 'hasStorage', label: 'Réserve/Entrepôt', type: 'boolean', icon: 'Package' },
+      { key: 'hasWater', label: 'Eau courante', type: 'boolean', icon: 'Droplets' },
+      { key: 'hasElectricity', label: 'Électricité', type: 'boolean', icon: 'Zap' },
+      { key: 'hasSecurity', label: 'Sécurité/Gardien', type: 'boolean', icon: 'Shield' },
+    ],
+    // Entrepôt / Hangar
+    entrepot: [
+      { key: 'propertyType', label: 'Type', type: 'select', icon: 'Package', options: ['Entrepôt', 'Hangar', 'Dépôt', 'Magasin de stockage'] },
+      { key: 'surface', label: 'Surface', type: 'number', unit: 'm²', icon: 'Ruler' },
+      { key: 'height', label: 'Hauteur plafond', type: 'number', unit: 'm', icon: 'Building' },
+      { key: 'hasQuai', label: 'Quai de chargement', type: 'boolean', icon: 'Truck' },
+      { key: 'hasPortail', label: 'Portail camion', type: 'boolean', icon: 'Truck' },
+      { key: 'hasElectricity', label: 'Électricité', type: 'boolean', icon: 'Zap' },
+      { key: 'hasSecurity', label: 'Sécurité 24h', type: 'boolean', icon: 'Shield' },
     ],
   },
 

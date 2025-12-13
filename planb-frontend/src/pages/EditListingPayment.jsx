@@ -62,7 +62,7 @@ export default function EditListingPayment() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-blue-50 to-white">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-secondary-200">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">

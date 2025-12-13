@@ -1,4 +1,4 @@
-# ================================================================
+.\DEMARRAGE\DEMARRER.ps1.# ================================================================
 # PLAN B - DEMARRAGE COMPLET
 # ================================================================
 
@@ -25,7 +25,8 @@ $containerExists = docker ps -a --format "{{.Names}}" | Select-String -Pattern "
 if ($containerExists) {
     Write-Host "  Demarrage du conteneur existant..." -ForegroundColor Cyan
     docker start planb-postgres | Out-Null
-} else {
+}
+else {
     Write-Host "  Creation du nouveau conteneur..." -ForegroundColor Cyan
     docker run -d `
         --name planb-postgres `

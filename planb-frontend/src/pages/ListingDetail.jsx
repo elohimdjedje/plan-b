@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Star, 
-  MessageCircle, Phone, ChevronRight, Camera, Home, 
+import {
+  ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Star,
+  MessageCircle, Phone, ChevronRight, Camera, Home,
   Shield, CheckCircle2, Mail, MessageSquare
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -14,7 +14,8 @@ import ContactOptions from '../components/listing/ContactOptions';
 import ReviewSection from '../components/listing/ReviewSection';
 import KeyInformation from '../components/listing/KeyInformation';
 import { formatPrice, formatRelativeDate } from '../utils/format';
-import { getCurrentUser, isListingOwnerSync, isAuthenticated } from '../utils/auth';
+import { isListingOwnerSync, isAuthenticated } from '../utils/auth';
+import { useAuthStore } from '../store/authStore';
 import { incrementListingViews } from '../utils/listings';
 import { listingsAPI } from '../api/listings';
 import { isFavorite as checkIsFavorite, toggleFavorite } from '../utils/favorites';
@@ -26,48 +27,57 @@ import { prepareListingImages, getImageUrl } from '../utils/images';
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: storeUser } = useAuthStore();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(storeUser);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  useEffect(() => {
-    loadListing();
-    loadCurrentUser();
-    
-    // Incrémenter les vues de l'annonce
+  // Fonction pour incrémenter le compteur de contacts
+  const incrementContactCount = async () => {
     if (id) {
-      incrementListingViews(id);
-    }
-    
-    // Vérifier si l'annonce est en favoris
-    setIsFavorite(checkIsFavorite(id));
-  }, [id]);
-  
-  const loadCurrentUser = async () => {
-    try {
-      const user = await getCurrentUser();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error('Erreur chargement utilisateur:', error);
-      setCurrentUser(null);
+      try {
+        await listingsAPI.incrementContacts(id);
+        console.log('Contact enregistré pour l\'annonce', id);
+      } catch (error) {
+        console.error('Erreur incrémentation contacts:', error);
+      }
     }
   };
 
+  useEffect(() => {
+    loadListing();
+
+    // Utiliser l'utilisateur du store directement (plus rapide, pas d'appel API)
+    if (storeUser) {
+      setCurrentUser(storeUser);
+    }
+
+    // Incrémenter les vues de l'annonce (en arrière-plan, non-bloquant)
+    if (id) {
+      setTimeout(() => incrementListingViews(id), 500);
+    }
+
+    // Vérifier si l'annonce est en favoris
+    setIsFavorite(checkIsFavorite(id));
+  }, [id, storeUser]);
+
   const loadListing = async () => {
     try {
-      setLoading(true);
-      
-      // Charger depuis l'API
+      // Ne pas afficher loading si on a déjà des données
+      if (!listing) {
+        setLoading(true);
+      }
+
+      // Charger depuis l'API (avec cache automatique)
       const response = await listingsAPI.getListing(id);
-      console.log('API Response:', response);
-      
+
       // La réponse peut être response.data ou directement response
       const listingData = response.data || response;
-      
+
       if (listingData) {
         setListing(listingData);
       } else {
@@ -110,10 +120,10 @@ export default function ListingDetail() {
 
     const newFavoriteState = toggleFavorite(id);
     setIsFavorite(newFavoriteState);
-    
+
     toast.success(
-      newFavoriteState 
-        ? 'Ajouté aux favoris' 
+      newFavoriteState
+        ? 'Ajouté aux favoris'
         : 'Retiré des favoris'
     );
   };
@@ -132,12 +142,12 @@ export default function ListingDetail() {
 
   // Vérifier si l'utilisateur connecté est le propriétaire de l'annonce
   const isOwner = isListingOwnerSync(listing, currentUser);
-  
+
   // Construire le nom de l'utilisateur
   const userName = listing.user?.firstName && listing.user?.lastName
     ? `${listing.user.firstName} ${listing.user.lastName}`
     : listing.user?.firstName || 'Vendeur';
-  
+
   // Initiales pour l'avatar
   const userInitials = listing.user?.firstName && listing.user?.lastName
     ? `${listing.user.firstName[0]}${listing.user.lastName[0]}`.toUpperCase()
@@ -186,10 +196,10 @@ export default function ListingDetail() {
       <div className="pt-16 pb-6">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            
+
             {/* Colonne gauche - Images et infos */}
             <div className="md:col-span-2 space-y-4">
-              
+
               {/* Galerie d'images style Leboncoin */}
               <div className="bg-white rounded-xl overflow-hidden border border-secondary-100">
                 {/* Image principale */}
@@ -205,7 +215,7 @@ export default function ListingDetail() {
                       <Camera size={64} />
                     </div>
                   )}
-                  
+
                   {/* Badge nombre de photos */}
                   {images.length > 1 && (
                     <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
@@ -213,7 +223,7 @@ export default function ListingDetail() {
                       Voir les {images.length} photos
                     </div>
                   )}
-                  
+
                   {/* Bouton favori sur l'image */}
                   <button
                     onClick={handleFavoriteClick}
@@ -225,7 +235,7 @@ export default function ListingDetail() {
                     />
                   </button>
                 </div>
-                
+
                 {/* Miniatures */}
                 {images.length > 1 && (
                   <div className="flex gap-2 p-3 overflow-x-auto scrollbar-hide">
@@ -233,11 +243,10 @@ export default function ListingDetail() {
                       <button
                         key={index}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedImageIndex === index 
-                            ? 'border-primary-500' 
+                        className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
+                            ? 'border-primary-500'
                             : 'border-transparent hover:border-secondary-300'
-                        }`}
+                          }`}
                       >
                         <img
                           src={getImageUrl(img?.url || img)}
@@ -264,7 +273,7 @@ export default function ListingDetail() {
                     <span className="text-lg font-normal text-secondary-500"> /{listing.priceUnit}</span>
                   )}
                 </div>
-                
+
                 {/* Spécifications rapides */}
                 {listing.specifications && (
                   <div className="flex flex-wrap gap-2 text-sm text-secondary-700 mb-3">
@@ -285,12 +294,12 @@ export default function ListingDetail() {
                     )}
                   </div>
                 )}
-                
+
                 {/* Titre */}
                 <h1 className="text-xl md:text-2xl font-semibold text-secondary-800 mb-3">
                   {listing.title}
                 </h1>
-                
+
                 {/* Date et vues */}
                 <div className="flex items-center gap-4 text-sm text-secondary-500">
                   <div className="flex items-center gap-1">
@@ -336,7 +345,7 @@ export default function ListingDetail() {
               {/* Section Avis - Desktop */}
               <div className="hidden md:block">
                 {listing.user?.id && (
-                  <ReviewSection 
+                  <ReviewSection
                     listing={listing}
                     currentUser={currentUser}
                     sellerId={listing.user.id}
@@ -348,7 +357,7 @@ export default function ListingDetail() {
             {/* Colonne droite - Vendeur (sticky sur desktop) */}
             <div className="md:col-span-1">
               <div className="md:sticky md:top-20 space-y-4">
-                
+
                 {/* Carte vendeur style Leboncoin */}
                 <div className="bg-white rounded-xl p-5 border border-secondary-100">
                   {/* En-tête vendeur */}
@@ -360,14 +369,14 @@ export default function ListingDetail() {
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
                       {userInitials}
                     </div>
-                    
+
                     {/* Infos */}
                     <div className="flex-1 text-left">
                       <div className="font-semibold text-secondary-900 text-lg flex items-center gap-2">
                         {userName}
                         {!isOwner && <ChevronRight size={18} className="text-secondary-400" />}
                       </div>
-                      
+
                       {/* Badge PRO */}
                       {listing.user?.isPro && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 text-xs font-semibold rounded mt-1">
@@ -377,7 +386,7 @@ export default function ListingDetail() {
                       )}
                     </div>
                   </button>
-                  
+
                   {isOwner && (
                     <div className="mt-3 p-3 bg-green-50 rounded-lg">
                       <div className="flex items-center gap-2 text-green-700 text-sm font-medium">
@@ -396,6 +405,7 @@ export default function ListingDetail() {
                         {listing.contactWhatsapp && (
                           <button
                             onClick={() => {
+                              incrementContactCount();
                               const message = `Bonjour, je suis intéressé(e) par votre annonce "${listing.title}" sur Plan B.`;
                               window.open(`https://wa.me/${listing.contactWhatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                             }}
@@ -403,17 +413,18 @@ export default function ListingDetail() {
                           >
                             <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                               </svg>
                             </div>
                             <span className="text-xs font-medium text-green-700">WhatsApp</span>
                           </button>
                         )}
-                        
+
                         {/* Téléphone - seulement si saisi */}
                         {listing.contactPhone && (
                           <button
                             onClick={() => {
+                              incrementContactCount();
                               window.location.href = `tel:${listing.contactPhone}`;
                             }}
                             className="flex flex-col items-center gap-1.5 p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
@@ -424,11 +435,12 @@ export default function ListingDetail() {
                             <span className="text-xs font-medium text-blue-700">Appeler</span>
                           </button>
                         )}
-                        
+
                         {/* SMS - seulement si téléphone saisi */}
                         {listing.contactPhone && (
                           <button
                             onClick={() => {
+                              incrementContactCount();
                               const message = `Bonjour, je suis intéressé(e) par "${listing.title}" sur Plan B.`;
                               window.location.href = `sms:${listing.contactPhone}?body=${encodeURIComponent(message)}`;
                             }}
@@ -440,11 +452,12 @@ export default function ListingDetail() {
                             <span className="text-xs font-medium text-purple-700">SMS</span>
                           </button>
                         )}
-                        
+
                         {/* Email - seulement si saisi */}
                         {listing.contactEmail && (
                           <button
                             onClick={() => {
+                              incrementContactCount();
                               const subject = `À propos de: ${listing.title}`;
                               const body = `Bonjour,\n\nJe suis intéressé(e) par votre annonce "${listing.title}" sur Plan B.\n\nCordialement`;
                               window.location.href = `mailto:${listing.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -487,7 +500,7 @@ export default function ListingDetail() {
                 {/* Section Avis - Mobile */}
                 <div className="md:hidden">
                   {listing.user?.id && (
-                    <ReviewSection 
+                    <ReviewSection
                       listing={listing}
                       currentUser={currentUser}
                       sellerId={listing.user.id}

@@ -16,7 +16,7 @@ class Image
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Listing::class, inversedBy: 'images')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private ?Listing $listing = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]

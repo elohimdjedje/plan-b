@@ -95,6 +95,9 @@ export const createListingSchema = z.object({
   priceUnit: z.enum(['XOF', 'USD', 'EUR'], {
     errorMap: () => ({ message: 'Devise invalide' })
   }),
+  priceDurationUnit: z.enum(['le mois', 'la jour', "l'heure", 'la nuit'], {
+    errorMap: () => ({ message: 'Unité de durée invalide' })
+  }).optional(),
   location: z
     .string()
     .min(3, 'La localisation doit contenir au moins 3 caractères'),

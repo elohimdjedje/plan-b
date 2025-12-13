@@ -6,6 +6,7 @@ use App\Entity\Listing;
 use App\Entity\User;
 use App\Entity\Image;
 use App\Repository\ListingRepository;
+use App\Repository\ReviewRepository;
 use App\Service\ViewCounterService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,7 +23,8 @@ class ListingController extends AbstractController
         private EntityManagerInterface $entityManager,
         private ValidatorInterface $validator,
         private ListingRepository $listingRepository,
-        private ViewCounterService $viewCounterService
+        private ViewCounterService $viewCounterService,
+        private ReviewRepository $reviewRepository
     ) {
     }
 
@@ -51,8 +53,16 @@ class ListingController extends AbstractController
             $filters['type'] = $request->query->get('type');
         }
         
+        if ($request->query->has('country')) {
+            $filters['country'] = $request->query->get('country');
+        }
+        
         if ($request->query->has('city')) {
             $filters['city'] = $request->query->get('city');
+        }
+        
+        if ($request->query->has('commune')) {
+            $filters['commune'] = $request->query->get('commune');
         }
         
         if ($request->query->has('minPrice')) {
@@ -88,6 +98,31 @@ class ListingController extends AbstractController
         return $this->json([
             'data' => array_map(fn($listing) => $this->serializeListing($listing), $proListings),
             'total' => count($proListings)
+        ]);
+    }
+
+    /**
+     * Récupérer les annonces récentes (moins d'une semaine)
+     * Pour la section "Top Annonces"
+     */
+    #[Route('/recent', name: 'listings_recent', methods: ['GET'])]
+    public function getRecentListings(Request $request): JsonResponse
+    {
+        $limit = min((int) $request->query->get('limit', 20), 50);
+        $category = $request->query->get('category');
+        
+        // Récupérer les annonces récentes (moins d'une semaine)
+        $recentListings = $this->listingRepository->findRecentListings($limit);
+        
+        // Filtrer par catégorie si spécifiée
+        if ($category && $category !== 'all') {
+            $recentListings = array_filter($recentListings, fn($listing) => $listing->getCategory() === $category);
+            $recentListings = array_values($recentListings); // Réindexer le tableau
+        }
+        
+        return $this->json([
+            'data' => array_map(fn($listing) => $this->serializeListing($listing), $recentListings),
+            'total' => count($recentListings)
         ]);
     }
 
@@ -148,8 +183,8 @@ class ListingController extends AbstractController
             ->setCategory($data['category'])
             ->setSubcategory($data['subcategory'] ?? null)
             ->setType($data['type'] ?? 'vente')
-            ->setCountry($data['country'])
-            ->setCity($data['city'])
+            ->setCountry($data['country'] ?? 'CI')
+            ->setCity($data['city'] ?? null)
             ->setCommune($data['commune'] ?? null)
             ->setQuartier($data['quartier'] ?? null)
             ->setAddress($data['address'] ?? null)
@@ -246,6 +281,44 @@ class ListingController extends AbstractController
         if (isset($data['specifications'])) {
             $listing->setSpecifications($data['specifications']);
         }
+        
+        // ✅ AJOUT: Gérer le changement de statut (vendu/occupé)
+        if (isset($data['status'])) {
+            $listing->setStatus($data['status']);
+        }
+        
+        // ✅ AJOUT: Gérer les champs de localisation
+        if (isset($data['city'])) {
+            $listing->setCity($data['city']);
+        }
+        if (isset($data['commune'])) {
+            $listing->setCommune($data['commune']);
+        }
+        if (isset($data['quartier'])) {
+            $listing->setQuartier($data['quartier']);
+        }
+        
+        // ✅ AJOUT: Gérer les champs de catégorie
+        if (isset($data['category'])) {
+            $listing->setCategory($data['category']);
+        }
+        if (isset($data['subcategory'])) {
+            $listing->setSubcategory($data['subcategory']);
+        }
+        if (isset($data['type'])) {
+            $listing->setType($data['type']);
+        }
+        
+        // ✅ AJOUT: Gérer les coordonnées de contact
+        if (isset($data['contactPhone'])) {
+            $listing->setContactPhone($data['contactPhone']);
+        }
+        if (isset($data['contactWhatsapp'])) {
+            $listing->setContactWhatsapp($data['contactWhatsapp']);
+        }
+        if (isset($data['contactEmail'])) {
+            $listing->setContactEmail($data['contactEmail']);
+        }
 
         $listing->setUpdatedAt(new \DateTime());
 
@@ -311,6 +384,14 @@ class ListingController extends AbstractController
         foreach ($user->getListings() as $userListing) {
             $sellerScore += $userListing->getViewsCount() + $userListing->getContactsCount();
         }
+        
+        // Stats de CETTE ANNONCE spécifique
+        $listingAverageRating = $this->reviewRepository->getAverageRatingForListing($listing);
+        $listingReviewsCount = $this->reviewRepository->getTotalReviewsForListing($listing);
+        
+        // Stats CUMULÉES du vendeur (toutes ses annonces)
+        $sellerAverageRating = $this->reviewRepository->getAverageRatingForSeller($user);
+        $sellerReviewsCount = $this->reviewRepository->getTotalReviewsForSeller($user);
 
         $data = [
             'id' => $listing->getId(),
@@ -332,6 +413,9 @@ class ListingController extends AbstractController
             'createdAt' => $listing->getCreatedAt()->format('c'),
             'expiresAt' => $listing->getExpiresAt()->format('c'),
             'mainImage' => $listing->getMainImage()?->getUrl(),
+            // Stats des avis de cette annonce spécifique (pour la page détail)
+            'averageRating' => $listingAverageRating > 0 ? $listingAverageRating : null,
+            'reviewsCount' => $listingReviewsCount > 0 ? $listingReviewsCount : null,
             // Toujours inclure les infos user de base pour afficher le badge PRO et le nom
             'user' => [
                 'id' => $user->getId(),
@@ -340,6 +424,9 @@ class ListingController extends AbstractController
                 'accountType' => $user->getAccountType(),
                 'isPro' => $user->isPro(),
                 'sellerScore' => $sellerScore,
+                // Stats cumulées du vendeur (pour l'en-tête des cartes)
+                'averageRating' => $sellerAverageRating > 0 ? $sellerAverageRating : null,
+                'reviewsCount' => $sellerReviewsCount > 0 ? $sellerReviewsCount : null,
             ],
         ];
 

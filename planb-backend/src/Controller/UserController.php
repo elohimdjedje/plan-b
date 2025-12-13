@@ -71,6 +71,10 @@ class UserController extends AbstractController
             $user->setProfilePicture($data['profilePicture']);
         }
 
+        if (isset($data['bio'])) {
+            $user->setBio($data['bio']);
+        }
+
         // Validation
         $errors = $this->validator->validate($user);
         if (count($errors) > 0) {
@@ -97,6 +101,7 @@ class UserController extends AbstractController
                 'country' => $user->getCountry(),
                 'city' => $user->getCity(),
                 'profilePicture' => $user->getProfilePicture(),
+                'bio' => $user->getBio(),
             ]
         ]);
     }

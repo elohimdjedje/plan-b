@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, Star, MessageCircle, Phone, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Star, MessageCircle, Phone, MessageSquare, Mail, RefreshCw } from 'lucide-react';
 import MobileContainer from '../components/layout/MobileContainer';
 import GlassCard from '../components/common/GlassCard';
 import Avatar from '../components/common/Avatar';
@@ -11,7 +11,7 @@ import Button from '../components/common/Button';
 import PlanBLoader from '../components/animations/PlanBLoader';
 import { formatRelativeDate } from '../utils/format';
 import { openWhatsApp } from '../utils/whatsapp';
-import { getCurrentUser } from '../utils/auth';
+import useAuthStore from '../store/authStore';
 import { usersAPI } from '../api/users';
 import { getImageUrl } from '../utils/images';
 import { toast } from 'react-hot-toast';
@@ -22,71 +22,82 @@ import { toast } from 'react-hot-toast';
 export default function SellerProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [seller, setSeller] = useState(null);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  useEffect(() => {
-    const loadSellerProfile = async () => {
-      try {
+  // Fonction de chargement du profil vendeur
+  const loadSellerProfile = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
-
-        // Vérifier si l'utilisateur essaie d'accéder à son propre profil
-        const currentUser = getCurrentUser();
-        if (currentUser && currentUser.id == userId) {
-          toast.error('Vous ne pouvez pas voir votre propre profil vendeur');
-          navigate('/profile');
-          return;
-        }
-
-        // Charger les vraies données depuis l'API
-        const data = await usersAPI.getPublicProfile(userId);
-        
-        // Chercher les contacts dans les annonces si pas dans le profil
-        const listings = data.listings || [];
-        let fallbackPhone = null;
-        let fallbackWhatsapp = null;
-        
-        for (const listing of listings) {
-          if (!fallbackPhone && listing.contactPhone) fallbackPhone = listing.contactPhone;
-          if (!fallbackWhatsapp && listing.contactWhatsapp) fallbackWhatsapp = listing.contactWhatsapp;
-          if (fallbackPhone && fallbackWhatsapp) break;
-        }
-
-        setSeller({
-          id: data.user.id,
-          name: data.user.fullName,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          phone: data.user.phone || fallbackPhone,
-          whatsappPhone: data.user.whatsappPhone || fallbackWhatsapp,
-          accountType: data.user.accountType,
-          isPro: data.user.isPro,
-          memberSince: data.user.memberSince,
-          location: `${data.user.city || ''}${data.user.city && data.user.country ? ', ' : ''}${data.user.country || ''}`.trim() || 'Non renseigné',
-          bio: data.user.bio || null,
-          profilePicture: data.user.profilePicture,
-          activeListings: data.stats.activeListings,
-          totalViews: data.stats.totalViews,
-          totalContacts: data.stats.totalContacts,
-          averageRating: data.user.averageRating || 0,
-          reviewsCount: data.user.reviewsCount || 0
-        });
-
-        setListings(listings);
-        
-      } catch (error) {
-        console.error('Erreur chargement profil vendeur:', error);
-        toast.error('Impossible de charger le profil du vendeur');
-        setSeller(null);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    loadSellerProfile();
+      // Vérifier si l'utilisateur essaie d'accéder à son propre profil
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser && currentUser.id == userId) {
+        toast.error('Vous ne pouvez pas voir votre propre profil vendeur');
+        navigate('/profile');
+        return;
+      }
+
+      // Charger les vraies données depuis l'API
+      const data = await usersAPI.getPublicProfile(userId);
+
+      // Chercher les contacts dans les annonces si pas dans le profil
+      const listings = data.listings || [];
+      let fallbackPhone = null;
+      let fallbackWhatsapp = null;
+
+
+      for (const listing of listings) {
+        if (!fallbackPhone && listing.contactPhone) fallbackPhone = listing.contactPhone;
+        if (!fallbackWhatsapp && listing.contactWhatsapp) fallbackWhatsapp = listing.contactWhatsapp;
+        if (fallbackPhone && fallbackWhatsapp) break;
+      }
+
+      setSeller({
+        id: data.user.id,
+        name: data.user.fullName,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        phone: data.user.phone || fallbackPhone,
+        whatsappPhone: data.user.whatsappPhone || fallbackWhatsapp,
+        email: data.user.email || listings.find(l => l.contactEmail)?.contactEmail,
+        accountType: data.user.accountType,
+        isPro: data.user.isPro,
+        memberSince: data.user.memberSince,
+        location: `${data.user.city || ''}${data.user.city && data.user.country ? ', ' : ''}${data.user.country || ''}`.trim() || 'Non renseigné',
+        bio: data.user.bio || null,
+        profilePicture: data.user.profilePicture,
+        activeListings: data.stats.activeListings,
+        totalViews: data.stats.totalViews,
+        totalContacts: data.stats.totalContacts,
+        averageRating: data.user.averageRating || 0,
+        reviewsCount: data.user.reviewsCount || 0
+      });
+
+      setListings(listings);
+
+    } catch (error) {
+      console.error('Erreur chargement profil vendeur:', error);
+      toast.error('Impossible de charger le profil du vendeur');
+      setSeller(null);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [userId, navigate]);
+
+  // Charger le profil au montage et à chaque changement de userId ou de location.key
+  useEffect(() => {
+    loadSellerProfile();
+  }, [userId, location.key, loadSellerProfile]);
 
   if (loading) {
     return <PlanBLoader />;
@@ -131,6 +142,13 @@ export default function SellerProfile() {
             <ArrowLeft size={24} />
           </button>
           <h1 className="text-lg font-semibold flex-1">Profil du vendeur</h1>
+          <button
+            onClick={() => loadSellerProfile(true)}
+            disabled={refreshing}
+            className="p-2 hover:bg-secondary-100 rounded-xl transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+          </button>
         </div>
       </div>
 
@@ -149,7 +167,7 @@ export default function SellerProfile() {
                   </Badge>
                 )}
               </div>
-              
+
               {/* Score étoiles */}
               {seller.reviewsCount > 0 && (
                 <div className="flex items-center gap-1 text-sm mb-2">
@@ -206,7 +224,7 @@ export default function SellerProfile() {
           )}
 
           {/* Boutons de contact */}
-          {(seller.phone || seller.whatsappPhone) ? (
+          {(seller.phone || seller.whatsappPhone || seller.email) ? (
             <div className="pt-4 flex flex-wrap gap-2">
               {/* WhatsApp */}
               {seller.whatsappPhone && (
@@ -221,7 +239,22 @@ export default function SellerProfile() {
                   <span className="text-sm font-medium">WhatsApp</span>
                 </button>
               )}
-              
+
+              {/* Email */}
+              {seller.email && (
+                <button
+                  onClick={() => {
+                    const subject = `Contact depuis Plan B - ${seller.name}`;
+                    const body = `Bonjour ${seller.firstName},\n\nJe suis intéressé par vos annonces sur Plan B.\n\nCordialement`;
+                    window.location.href = `mailto:${seller.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  }}
+                  className="flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-700 border border-orange-500/30 rounded-xl transition-all"
+                >
+                  <Mail size={18} />
+                  <span className="text-sm font-medium">Email</span>
+                </button>
+              )}
+
               {/* Appeler */}
               {seller.phone && (
                 <button
@@ -232,7 +265,7 @@ export default function SellerProfile() {
                   <span className="text-sm font-medium">Appeler</span>
                 </button>
               )}
-              
+
               {/* SMS */}
               {seller.phone && (
                 <button
@@ -263,11 +296,10 @@ export default function SellerProfile() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex-shrink-0 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
-                  selectedCategory === cat.id
-                    ? 'bg-primary-500 text-white shadow-lg'
-                    : 'bg-white/80 text-secondary-600 hover:bg-white'
-                }`}
+                className={`flex-shrink-0 px-4 py-2 rounded-xl font-medium text-sm transition-all ${selectedCategory === cat.id
+                  ? 'bg-primary-500 text-white shadow-lg'
+                  : 'bg-white/80 text-secondary-600 hover:bg-white'
+                  }`}
               >
                 {cat.label} ({cat.count})
               </button>
@@ -280,12 +312,12 @@ export default function SellerProfile() {
           <h3 className="text-lg font-semibold mb-3">
             {selectedCategory === 'all' ? 'Toutes les annonces' : categories.find(c => c.id === selectedCategory)?.label}
           </h3>
-          
+
           {filteredListings.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {filteredListings.map((listing, index) => (
-                <ListingCard 
-                  key={listing.id} 
+                <ListingCard
+                  key={listing.id}
                   listing={{
                     ...listing,
                     user: {
@@ -297,7 +329,7 @@ export default function SellerProfile() {
                       averageRating: seller.averageRating,
                       reviewsCount: seller.reviewsCount
                     }
-                  }} 
+                  }}
                   index={index}
                   compact
                 />

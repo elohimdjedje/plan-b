@@ -27,20 +27,40 @@ export const register = async (userData) => {
  */
 export const login = async (email, password) => {
   try {
+    // IMPORTANT: Nettoyer l'ancien état avant la connexion
+    localStorage.removeItem('token');
+    localStorage.removeItem('planb-auth-storage');
+    localStorage.removeItem('user');
+    
+    console.log('[LOGIN] Tentative de connexion pour:', email);
+    
     const response = await api.post('/auth/login', { email, password });
     const token = response.data.token;
-    const user = response.data.user; // Le backend envoie déjà le user!
+    const user = response.data.user;
+    
+    console.log('[LOGIN] Réponse reçue - Token:', token ? token.substring(0, 30) + '...' : 'null');
+    console.log('[LOGIN] Réponse reçue - User:', user?.email || 'null');
+    
+    if (!token) {
+      throw new Error('Token non reçu du serveur');
+    }
     
     // Sauvegarder le token dans localStorage
     localStorage.setItem('token', token);
     
-    // Mettre à jour le store Zustand
+    // Vérifier que le token est bien sauvegardé
+    const savedToken = localStorage.getItem('token');
+    console.log('[LOGIN] Token sauvegardé:', savedToken ? savedToken.substring(0, 30) + '...' : 'ÉCHEC SAUVEGARDE');
+    
+    // Mettre à jour le store Zustand si user disponible
     if (typeof window !== 'undefined' && window.useAuthStore && user) {
+      console.log('[LOGIN] Mise à jour du store Zustand');
       window.useAuthStore.getState().login(user, token);
     }
     
     return token;
   } catch (error) {
+    console.error('[LOGIN] Erreur:', error.message);
     throw error;
   }
 };
@@ -55,11 +75,23 @@ export const getCurrentUser = async () => {
     if (!token) return null;
     
     const response = await api.get('/auth/me');
-    return response.data;
+    const apiUser = response.data;
+    
+    // Vérifier la cohérence avec le store
+    if (typeof window !== 'undefined' && window.useAuthStore) {
+      const storeUser = window.useAuthStore.getState().user;
+      if (storeUser?.id && apiUser?.id && storeUser.id !== apiUser.id) {
+        console.error('[AUTH] INCOHÉRENCE CRITIQUE! Store:', storeUser.email, '| API:', apiUser.email);
+        // Corriger le store avec les bonnes données
+        window.useAuthStore.getState().login(apiUser, token);
+      }
+    }
+    
+    return apiUser;
   } catch (error) {
     console.error('Erreur récupération utilisateur:', error);
-    // Si le token est invalide, le supprimer
-    localStorage.removeItem('token');
+    // NE PAS supprimer le token ici - laisser l'utilisateur gérer
+    // Le token peut être temporairement invalide mais le store peut avoir les données
     return null;
   }
 };

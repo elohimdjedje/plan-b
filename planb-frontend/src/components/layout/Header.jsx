@@ -1,32 +1,28 @@
-import { Bell, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { getUnreadNotificationsCount } from '../../utils/notifications';
+import NotificationBell from '../notifications/NotificationBell';
 
 /**
  * Header avec logo Plan B et notifications
  */
-export default function Header({ showLogo = true, title, actions, leftAction, transparent = false, showNotifications = true }) {
+export default function Header({ showLogo = true, title, actions, leftAction, transparent = false, showNotifications = true, scrollProgress = 0 }) {
   const navigate = useNavigate();
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    // Charger le nombre de notifications non lues
-    const count = getUnreadNotificationsCount();
-    setUnreadCount(count);
-
-    // DÉSACTIVÉ temporairement pour éviter de surcharger le serveur
-    // TODO: Réactiver quand on utilisera un vrai serveur (pas PHP built-in)
-    // const interval = setInterval(() => {
-    //   const newCount = getUnreadNotificationsCount();
-    //   setUnreadCount(newCount);
-    // }, 10000);
-    // return () => clearInterval(interval);
-  }, []);
+  // Calculer l'opacité du logo basée sur le scroll (disparaît progressivement)
+  const logoOpacity = transparent ? Math.max(0, 1 - scrollProgress * 1.5) : 1;
+  // Calculer l'opacité du fond du header (apparaît progressivement)
+  const headerBgOpacity = transparent ? Math.min(scrollProgress * 1.2, 0.9) : 1;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 safe-top">
-      <div className={transparent ? 'bg-transparent' : 'bg-white/40 backdrop-blur-2xl border-b border-white/30'}>
+      <div
+        className={`transition-all duration-150 ${transparent ? '' : 'bg-white/70 backdrop-blur-2xl border-b border-sky-100/50 shadow-sm'}`}
+        style={transparent ? {
+          backgroundColor: `rgba(255, 255, 255, ${headerBgOpacity * 0.7})`,
+          backdropFilter: scrollProgress > 0.1 ? 'blur(20px)' : 'none',
+          borderBottom: scrollProgress > 0.3 ? '1px solid rgba(186, 230, 253, 0.5)' : 'none'
+        } : {}}
+      >
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           {/* Bouton retour à gauche (si présent) */}
           {leftAction && !showLogo && (
@@ -37,10 +33,18 @@ export default function Header({ showLogo = true, title, actions, leftAction, tr
 
           {/* Logo à gauche ou Titre au centre */}
           {showLogo ? (
-            <Link to="/" className="flex items-center flex-shrink-0">
-              <img 
-                src="/plan-b-logo.png" 
-                alt="Plan B" 
+            <Link
+              to="/"
+              className="flex items-center flex-shrink-0 transition-all duration-200"
+              style={{
+                opacity: logoOpacity,
+                transform: `scale(${1 - scrollProgress * 0.2})`,
+                pointerEvents: logoOpacity < 0.3 ? 'none' : 'auto'
+              }}
+            >
+              <img
+                src="/plan-b-logo.png"
+                alt="Plan B"
                 className="h-16 w-auto object-contain hover:opacity-80 transition-opacity"
               />
             </Link>
@@ -49,43 +53,32 @@ export default function Header({ showLogo = true, title, actions, leftAction, tr
               {title}
             </h1>
           ) : (
-            <div className="flex-1" /> 
+            <div className="flex-1" />
           )}
 
           {/* Actions à droite (conversations + notifications) */}
           {(showLogo || actions) && (
             <div className="flex items-center gap-2 flex-shrink-0">
               {actions || (
-                showNotifications && (
+                !transparent && showNotifications && (
                   <>
                     {/* Icône carte */}
-                    <button 
+                    <button
                       onClick={() => navigate('/map')}
                       className="relative p-2 hover:bg-secondary-100 rounded-xl transition-colors"
                       title="Carte des annonces"
                     >
                       <MapPin size={24} className="text-secondary-600" />
                     </button>
-                    
-                    {/* Icône notifications */}
-                    <button 
-                      onClick={() => navigate('/notifications')}
-                      className="relative p-2 hover:bg-secondary-100 rounded-xl transition-colors"
-                      title="Notifications"
-                    >
-                      <Bell size={24} className="text-secondary-600" />
-                      {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                      )}
-                    </button>
+
+                    {/* Composant Notifications */}
+                    <NotificationBell />
                   </>
                 )
               )}
             </div>
           )}
-          
+
           {/* Espace vide à droite si pas de logo et pas d'actions (pour équilibrer) */}
           {!showLogo && !actions && leftAction && (
             <div className="w-10 flex-shrink-0" />

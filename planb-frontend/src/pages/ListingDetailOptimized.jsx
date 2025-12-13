@@ -13,7 +13,8 @@ import ViewCounter from '../components/listing/ViewCounter';
 import AuthPrompt from '../components/auth/AuthPrompt';
 import { formatPrice, formatRelativeDate } from '../utils/format';
 import { openWhatsApp, createListingMessage } from '../utils/whatsapp';
-import { getCurrentUser, isListingOwnerSync, isAuthenticated } from '../utils/auth';
+import { isListingOwnerSync, isAuthenticated } from '../utils/auth';
+import useAuthStore from '../store/authStore';
 import { getListingById } from '../utils/listings';
 import { listingsAPI } from '../api/listings';
 import { isFavorite as checkIsFavorite, toggleFavorite } from '../utils/favorites';
@@ -31,11 +32,12 @@ export default function ListingDetailOptimized() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Utiliser le store directement (synchrone, pas d'appel API)
+  const currentUser = useAuthStore(state => state.user);
 
   useEffect(() => {
     loadListing();
-    loadCurrentUser();
     
     // Vérifier si l'annonce est en favoris
     setIsFavorite(checkIsFavorite(id));
@@ -59,16 +61,6 @@ export default function ListingDetailOptimized() {
     // Nettoyer au démontage du composant
     return cleanup;
   }, [id, listing]);
-  
-  const loadCurrentUser = async () => {
-    try {
-      const user = await getCurrentUser();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error('Erreur chargement utilisateur:', error);
-      setCurrentUser(null);
-    }
-  };
 
   const loadListing = async () => {
     try {

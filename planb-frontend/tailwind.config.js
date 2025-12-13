@@ -8,16 +8,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#FFF5F2',
-          100: '#FFE8E0',
-          200: '#FFD1BF',
-          300: '#FFB89E',
-          400: '#FF9F7D',
-          500: '#FF6B35', // Orange principal
-          600: '#E65A2B',
-          700: '#CC4A1F',
-          800: '#B33A13',
-          900: '#992A07',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6', // Bleu ciel principal
+          600: '#2563EB',
+          700: '#1D4ED8',
+          800: '#1E40AF',
+          900: '#1E3A8A',
         },
         secondary: {
           50: '#F8F9FA',

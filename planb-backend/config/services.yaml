@@ -25,3 +25,10 @@ services:
     App\EventListener\SubscriptionExpirationListener:
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
+
+    # CORS Listener pour autoriser les requêtes depuis le frontend
+    # DÉSACTIVÉ: NelmioCorsBundle gère déjà le CORS (évite les headers dupliqués)
+    # App\EventListener\CorsListener:
+    #     tags:
+    #         - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
+    #         - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 250 }

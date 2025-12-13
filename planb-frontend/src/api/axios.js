@@ -10,83 +10,170 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 120000, // 120 secondes (2 minutes) pour les requêtes lentes
+  timeout: 30000, // 30 secondes - équilibre entre rapidité et fiabilité
 });
 
-// Intercepteur pour ajouter le token JWT
+// ============================================
+// CONFIGURATION DES ROUTES
+// ============================================
+
+// Routes qui ne nécessitent JAMAIS de token (uniquement GET)
+const PUBLIC_GET_ROUTES = [
+  '/listings',
+  '/categories',
+  '/search',
+  '/reviews',
+];
+
+// Routes qui ne nécessitent JAMAIS de token (toutes méthodes)
+const PUBLIC_ROUTES = [
+  '/auth/login',
+  '/auth/register',
+  '/webhooks',
+];
+
+// Routes où on ne doit PAS afficher d'erreur toast
+const SILENT_ROUTES = [
+  '/auth/me',
+  '/auth/login',
+  '/auth/register',
+  '/notifications/count',
+];
+
+// Vérifier si une route est publique selon la méthode HTTP
+const isPublicRoute = (url, method = 'GET') => {
+  if (!url) return false;
+  
+  // Routes toujours publiques
+  if (PUBLIC_ROUTES.some(route => url.includes(route))) {
+    return true;
+  }
+  
+  // Routes publiques uniquement en GET
+  if (method.toUpperCase() === 'GET') {
+    return PUBLIC_GET_ROUTES.some(route => url.includes(route));
+  }
+  
+  return false;
+};
+
+// Vérifier si une route doit être silencieuse
+const isSilentRoute = (url) => {
+  if (!url) return false;
+  return SILENT_ROUTES.some(route => url.includes(route));
+};
+
+// ============================================
+// GESTION DU TOKEN
+// ============================================
+
+let isCleaningUp = false;
+
+const cleanupAuth = () => {
+  if (isCleaningUp) return;
+  isCleaningUp = true;
+  
+  console.warn('[AXIOS] cleanupAuth() appelé - suppression du token!');
+  console.trace('[AXIOS] Stack trace du cleanup:');
+  
+  // Nettoyer localStorage
+  localStorage.removeItem('token');
+  localStorage.removeItem('planb-auth-storage');
+  
+  // Nettoyer le store Zustand
+  if (window.useAuthStore) {
+    try {
+      window.useAuthStore.getState().logout();
+    } catch (e) {
+      // Ignorer les erreurs
+    }
+  }
+  
+  // Reset après délai
+  setTimeout(() => {
+    isCleaningUp = false;
+  }, 2000);
+};
+
+// ============================================
+// INTERCEPTEUR REQUEST
+// ============================================
+
 api.interceptors.request.use(
   (config) => {
+    // Ajouter le token seulement si présent
     const token = localStorage.getItem('token');
+    
+    // Debug logging pour diagnostiquer les problèmes d'auth
+    console.log('[AXIOS] Request:', config.method?.toUpperCase(), config.url);
+    console.log('[AXIOS] Token présent:', !!token, token ? token.substring(0, 20) + '...' : 'null');
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Intercepteur pour gérer les erreurs globalement
+// ============================================
+// INTERCEPTEUR RESPONSE
+// ============================================
+
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Gestion des erreurs réseau
+  // Succès - reset du flag
+  (response) => {
+    isCleaningUp = false;
+    return response;
+  },
+  
+  // Erreur
+  async (error) => {
+    // Pas de réponse = erreur réseau
     if (!error.response) {
-      // Erreur silencieuse pour les appels automatiques (getCurrentUser)
-      if (!error.config?.showError) {
-        return Promise.reject(error);
-      }
-      
-      // Erreur de timeout spécifique
-      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        toast.error('Le serveur met trop de temps à répondre. Réessayez.');
-      } else {
-        toast.error('Erreur de connexion. Vérifiez votre internet.');
+      if (error.code === 'ECONNABORTED') {
+        toast.error('Connexion lente. Réessayez.');
       }
       return Promise.reject(error);
     }
 
-    // Gestion des erreurs HTTP
-    const { status, data } = error.response;
-    const showError = error.config?.showError !== false;
+    const { status, config } = error.response;
+    const url = config?.url || '';
+    const method = config?.method || 'GET';
+    const isRetry = config?._retry;
 
-    switch (status) {
-      case 401:
-        // Non authentifié - silencieux pour /auth/me
-        if (error.config?.url?.includes('/auth/me')) {
-          localStorage.removeItem('token');
-          return Promise.reject(error);
-        }
-        if (showError) {
-          toast.error('Session expirée. Veuillez vous reconnecter.');
-        }
-        localStorage.removeItem('token');
-        window.location.href = '/auth';
-        break;
-      case 403:
-        if (showError) toast.error('Accès refusé.');
-        break;
-      case 404:
-        if (showError) toast.error('Ressource non trouvée.');
-        break;
-      case 422:
-        // Erreurs de validation
-        if (showError) {
-          if (data.errors) {
-            Object.values(data.errors).forEach((messages) => {
-              messages.forEach((msg) => toast.error(msg));
-            });
-          } else {
-            toast.error(data.message || 'Données invalides.');
+    // ========== GESTION 401 ==========
+    if (status === 401) {
+      console.error('[AXIOS] 401 reçu pour:', url, '| method:', method);
+      console.log('[AXIOS] Token actuel:', localStorage.getItem('token') ? 'présent' : 'absent');
+      
+      // NE JAMAIS supprimer le token automatiquement
+      // L'utilisateur doit se déconnecter manuellement ou le token expire naturellement
+      // Afficher juste un message si ce n'est pas une route silencieuse
+      if (!isSilentRoute(url) && !url.includes('/auth/')) {
+        toast.error('Session expirée. Veuillez vous reconnecter.', { id: 'session-expired' });
+      }
+    }
+    
+    // ========== AUTRES ERREURS ==========
+    else if (!isSilentRoute(url)) {
+      switch (status) {
+        case 403:
+          toast.error('Accès non autorisé', { id: 'forbidden' });
+          break;
+        case 404:
+          // Silencieux pour 404
+          break;
+        case 422:
+          const data = error.response.data;
+          if (data?.message) {
+            toast.error(data.message, { id: 'validation' });
           }
-        }
-        break;
-      case 500:
-        if (showError) toast.error('Erreur serveur. Réessayez plus tard.');
-        break;
-      default:
-        if (showError) toast.error(data.message || 'Une erreur est survenue.');
+          break;
+        case 500:
+          toast.error('Erreur serveur', { id: 'server-error' });
+          break;
+      }
     }
 
     return Promise.reject(error);

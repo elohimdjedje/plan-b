@@ -84,11 +84,12 @@ export default function WavePayment() {
     setPaymentStatus('processing');
 
     try {
-      // OPTION 1: Redirection vers Wave (Simple et rapide)
-      // Votre lien Wave avec paramètres
-      const wavePaymentLink = 'https://pay.wave.com/m/M_qMsEKvTXZo-1';
+      // LIEN DE PAIEMENT WAVE PERSONNEL (GRATUIT - pas besoin d'API)
+      // Ce lien renvoie l'argent directement sur ton compte Wave
+      const wavePaymentLink = 'https://pay.wave.com/m/M_ci_cCLTAMUtr2FQ/c/ci/';
       
-      // Paramètres à ajouter à l'URL
+      // Note: Les paramètres URL peuvent ne pas fonctionner avec tous les liens Wave
+      // L'utilisateur devra peut-être entrer le montant manuellement sur Wave
       const params = new URLSearchParams({
         amount: planPrice,
         phone: cleanPhone,
@@ -102,13 +103,19 @@ export default function WavePayment() {
       const finalUrl = `${wavePaymentLink}?${params.toString()}`;
       console.log('🔗 URL de paiement Wave:', finalUrl);
       
-      // Afficher une notification avec le montant
-      toast.success(`Redirection vers Wave pour ${planPrice.toLocaleString()} FCFA`, { duration: 2000 });
+      // Afficher une notification avec le montant et instructions
+      toast.success(
+        `Montant à payer sur Wave: ${planPrice.toLocaleString()} FCFA\nVérifie bien le montant avant de valider!`, 
+        { duration: 4000 }
+      );
+      
+      // Sauvegarder le numéro pour l'activation automatique
+      sessionStorage.setItem('wave_phone', cleanPhone);
       
       // Attendre un peu avant la redirection pour voir le toast
       setTimeout(() => {
         window.location.href = finalUrl;
-      }, 1000);
+      }, 1500);
 
       // OPTION 2: Appel API Backend (Plus avancé)
       // Décommentez si vous avez un backend
@@ -319,10 +326,26 @@ export default function WavePayment() {
                         <div>
                           <p className="font-medium mb-1">Comment ça marche ?</p>
                           <ol className="space-y-1 text-xs">
-                            <li>1. Entrez votre numéro Wave</li>
-                            <li>2. Validez avec votre code PIN Wave</li>
-                            <li>3. Votre compte devient PRO instantanément</li>
+                            <li>1. Entrez votre numéro Wave ci-dessus</li>
+                            <li>2. Vous serez redirigé vers Wave</li>
+                            <li>3. Vérifiez que le montant affiché est correct</li>
+                            <li>4. Validez le paiement avec votre code PIN</li>
+                            <li>5. Revenez sur l'application après paiement</li>
                           </ol>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Message important */}
+                    <div className="bg-yellow-50/80 backdrop-blur-sm p-3 rounded-xl border border-yellow-200">
+                      <div className="flex gap-2 text-sm text-yellow-800">
+                        <Sparkles size={16} className="flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-medium mb-1">Important</p>
+                          <p className="text-xs">
+                            Après votre paiement, envoyez-nous une capture d'écran de la confirmation Wave 
+                            sur WhatsApp pour activer votre compte PRO rapidement !
+                          </p>
                         </div>
                       </div>
                     </div>

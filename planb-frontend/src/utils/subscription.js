@@ -4,7 +4,6 @@
  */
 
 import api from '../api/axios';
-import { getCurrentUser } from './auth';
 
 /**
  * Créer un paiement pour abonnement PRO
@@ -124,27 +123,30 @@ export const getSubscriptionStatus = (user) => {
  * @returns {Promise<void>}
  */
 export const initializeSubscription = async () => {
-  try {
-    const user = await getCurrentUser();
-    if (user) {
-      return getSubscriptionStatus(user);
+  // Vérifier si connecté via le store (pas d'appel API)
+  if (typeof window !== 'undefined' && window.useAuthStore) {
+    const store = window.useAuthStore.getState();
+    if (store.isAuthenticated && store.user) {
+      return getSubscriptionStatus(store.user);
     }
-    return null;
-  } catch (error) {
-    console.error('Erreur initialisation abonnement:', error);
-    return null;
   }
+  return null;
 };
 
 /**
  * Obtenir l'abonnement de l'utilisateur
- * @returns {Promise<Object|null>}
+ * @returns {Object|null}
  */
-export const getSubscription = async () => {
+export const getSubscription = () => {
   try {
-    const user = await getCurrentUser();
-    if (!user) return null;
-    return getSubscriptionStatus(user);
+    // Utiliser le store synchrone au lieu d'un appel API
+    if (typeof window !== 'undefined' && window.useAuthStore) {
+      const store = window.useAuthStore.getState();
+      if (store.user) {
+        return getSubscriptionStatus(store.user);
+      }
+    }
+    return null;
   } catch (error) {
     console.error('Erreur récupération abonnement:', error);
     return null;

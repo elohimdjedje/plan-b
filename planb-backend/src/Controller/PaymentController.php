@@ -20,6 +20,111 @@ class PaymentController extends AbstractController
     ) {}
 
     /**
+     * Confirmer le paiement Wave et activer le compte PRO
+     * Cette route est appelée quand l'utilisateur revient de Wave après paiement
+     * SANS API Wave payante - basé sur la confiance (à vérifier manuellement)
+     */
+    #[Route('/confirm-wave', name: 'app_payment_confirm_wave', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function confirmWavePayment(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        
+        // Récupérer les données du paiement
+        $months = $data['months'] ?? 1;
+        $amount = $data['amount'] ?? 10000;
+        $phoneNumber = $data['phoneNumber'] ?? null;
+        
+        // Valider les données
+        if ($months < 1 || $months > 12) {
+            return $this->json(['error' => 'Durée invalide (1-12 mois)'], 400);
+        }
+        
+        // Calculer la date d'expiration
+        $durationDays = $months * 30;
+        $startDate = new \DateTimeImmutable();
+        
+        // Si l'utilisateur a déjà un abonnement actif, prolonger
+        $currentExpiry = $user->getSubscriptionExpiresAt();
+        if ($currentExpiry && $currentExpiry > $startDate) {
+            $expiresAt = $currentExpiry->modify("+{$durationDays} days");
+        } else {
+            $expiresAt = $startDate->modify("+{$durationDays} days");
+        }
+
+        // Créer un enregistrement de paiement (pour historique)
+        $payment = new Payment();
+        $payment->setUser($user);
+        $payment->setAmount($amount);
+        $payment->setCurrency('XOF');
+        $payment->setPaymentMethod('wave_link');
+        $payment->setStatus('pending_verification'); // À vérifier manuellement
+        $payment->setDescription("Abonnement PRO {$months} mois via Wave Link");
+        $payment->setMetadata([
+            'months' => $months,
+            'type' => 'subscription',
+            'phone' => $phoneNumber,
+            'needs_manual_verification' => true
+        ]);
+        $payment->setCreatedAt(new \DateTimeImmutable());
+
+        $this->entityManager->persist($payment);
+
+        // Vérifier/créer l'abonnement
+        $subscription = $this->entityManager->getRepository(Subscription::class)
+            ->findOneBy(['user' => $user]);
+
+        if (!$subscription) {
+            $subscription = new Subscription();
+            $subscription->setUser($user);
+            $subscription->setAccountType('PRO');
+            $subscription->setStartDate($startDate);
+            $subscription->setCreatedAt($startDate);
+            $this->entityManager->persist($subscription);
+        }
+
+        $subscription->setStatus('active');
+        $subscription->setExpiresAt($expiresAt);
+        $subscription->setUpdatedAt(new \DateTimeImmutable());
+
+        // Mettre à jour l'utilisateur en PRO
+        $user->setAccountType('PRO');
+        $user->setSubscriptionExpiresAt($expiresAt);
+        $user->setUpdatedAt(new \DateTimeImmutable());
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Compte PRO activé avec succès',
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'accountType' => 'PRO',
+                'subscriptionExpiresAt' => $expiresAt->format('c')
+            ],
+            'subscription' => [
+                'months' => $months,
+                'amount' => $amount,
+                'expiresAt' => $expiresAt->format('c'),
+                'daysRemaining' => $durationDays
+            ],
+            'payment' => [
+                'id' => $payment->getId(),
+                'status' => 'pending_verification',
+                'note' => 'Paiement à vérifier dans les transactions Wave'
+            ]
+        ], 200);
+    }
+
+    /**
      * Créer un paiement pour abonnement PRO
      */
     #[Route('/create-subscription', name: 'app_payment_create_subscription', methods: ['POST'])]

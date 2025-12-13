@@ -77,6 +77,34 @@ class ReviewRepository extends ServiceEntityRepository
     }
 
     /**
+     * Obtenir la note moyenne d'une annonce spécifique
+     */
+    public function getAverageRatingForListing(Listing $listing): float
+    {
+        $result = $this->createQueryBuilder('r')
+            ->select('AVG(r.rating) as avgRating')
+            ->where('r.listing = :listing')
+            ->setParameter('listing', $listing)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return round((float) $result, 1);
+    }
+
+    /**
+     * Obtenir le nombre total d'avis pour une annonce spécifique
+     */
+    public function getTotalReviewsForListing(Listing $listing): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.listing = :listing')
+            ->setParameter('listing', $listing)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * Vérifier si un utilisateur a déjà laissé un avis pour une annonce
      */
     public function hasUserReviewedListing(User $reviewer, Listing $listing): bool

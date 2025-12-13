@@ -44,7 +44,7 @@ export default function CategoryListingsCarousel({
     >
       {/* En-tête avec titre et lien */}
       <div className="flex items-center justify-between mb-3 gap-2">
-        <h2 className="text-lg md:text-xl font-bold text-secondary-900">{title}</h2>
+        <h2 className="text-lg md:text-xl font-bold text-secondary-800">{title}</h2>
         <button
           onClick={handleViewMore}
           className="flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium text-xs md:text-sm transition-colors group flex-shrink-0"
@@ -60,17 +60,17 @@ export default function CategoryListingsCarousel({
         {/* Bouton gauche */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity -translate-x-1/2"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-gray-800/90 hover:bg-gray-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity -translate-x-1/2 border border-white/10"
         >
-          <ChevronLeft size={24} className="text-secondary-700" />
+          <ChevronLeft size={24} className="text-white" />
         </button>
 
         {/* Bouton droite */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity translate-x-1/2"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-gray-800/90 hover:bg-gray-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity translate-x-1/2 border border-white/10"
         >
-          <ChevronRight size={24} className="text-secondary-700" />
+          <ChevronRight size={24} className="text-white" />
         </button>
 
         {/* Liste scrollable */}

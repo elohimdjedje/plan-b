@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogIn, UserPlus, Mail, Lock, User, Loader2, Globe, Flag } from 'lucide-react';
@@ -15,7 +15,31 @@ import { countries, getNationalityByCode } from '../data/countries';
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
+  // NOTE: Ne plus nettoyer automatiquement au chargement de la page Auth
+  // car cela peut supprimer une session valide si l'utilisateur revient sur /auth
+  // Le nettoyage se fera uniquement lors d'un logout explicite
+  /*
+  useEffect(() => {
+    // Supprimer tous les tokens/données de session
+    localStorage.removeItem('token');
+    localStorage.removeItem('planb-auth-storage');
+    localStorage.removeItem('user');
+    
+    // Nettoyer le store Zustand si disponible
+    if (window.useAuthStore) {
+      try {
+        window.useAuthStore.getState().logout();
+      } catch (e) {
+        // Ignorer les erreurs
+      }
+    }
+    
+    // Supprimer les toasts d'erreur de session existants
+    toast.dismiss('session-expired');
+  }, []);
+  */
+
   // Déterminer le mode initial depuis l'URL ou le state
   const getInitialMode = () => {
     // Vérifier l'URL d'abord
@@ -26,10 +50,10 @@ export default function Auth() {
     // Par défaut : login
     return 'login';
   };
-  
+
   const [mode, setMode] = useState(getInitialMode());
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -42,10 +66,10 @@ export default function Auth() {
   // Mettre à jour automatiquement la nationalité quand le pays change
   const handleCountryChange = (countryCode) => {
     const nationality = getNationalityByCode(countryCode);
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       country: countryCode,
-      nationality: nationality 
+      nationality: nationality
     }));
   };
 
@@ -66,18 +90,18 @@ export default function Auth() {
           firstName: formData.firstName,
           lastName: formData.lastName,
         };
-        
+
         // Ajouter pays et nationalité si renseignés
         if (formData.country) registerData.country = formData.country;
         if (formData.nationality) registerData.nationality = formData.nationality;
-        
+
         await apiRegister(registerData);
-        
+
         toast.success('✅ Inscription réussie ! Connectez-vous maintenant.');
-        
+
         // Passer en mode connexion (ne pas se connecter automatiquement)
         setMode('login');
-        
+
         // Garder l'email et effacer les autres champs
         setFormData(prev => ({
           ...prev,
@@ -89,23 +113,26 @@ export default function Auth() {
         }));
       } else {
         // Connexion
-        await apiLogin(formData.email, formData.password);
+        const token = await apiLogin(formData.email, formData.password);
+
+        // Attendre que Zustand persist sauvegarde les données
+        await new Promise(resolve => setTimeout(resolve, 300));
+
         toast.success('✅ Connexion réussie !');
-        
-        // Redirection après connexion réussie (pas d'animation de chargement)
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 200);
+
+        // Utiliser navigate au lieu de window.location.href
+        // pour ne pas forcer un rechargement complet
+        navigate('/', { replace: true });
       }
-      
+
     } catch (error) {
       console.error('Erreur authentification:', error);
-      
+
       // Gestion des erreurs avec messages détaillés
       if (error.response) {
         const status = error.response.status;
         const data = error.response.data;
-        
+
         if (mode === 'login') {
           // Erreurs de connexion
           if (status === 401) {
@@ -178,11 +205,10 @@ export default function Auth() {
             <div className="flex gap-2 mb-6">
               <button
                 onClick={() => setMode('login')}
-                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
-                  isLogin
-                    ? 'bg-primary-500 text-white shadow-lg'
-                    : 'bg-white/50 text-secondary-700 hover:bg-white/70'
-                }`}
+                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${isLogin
+                  ? 'bg-primary-500 text-white shadow-lg'
+                  : 'bg-white/50 text-secondary-700 hover:bg-white/70'
+                  }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <LogIn size={18} />
@@ -191,11 +217,10 @@ export default function Auth() {
               </button>
               <button
                 onClick={() => setMode('register')}
-                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
-                  !isLogin
-                    ? 'bg-primary-500 text-white shadow-lg'
-                    : 'bg-white/50 text-secondary-700 hover:bg-white/70'
-                }`}
+                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${!isLogin
+                  ? 'bg-primary-500 text-white shadow-lg'
+                  : 'bg-white/50 text-secondary-700 hover:bg-white/70'
+                  }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <UserPlus size={18} />

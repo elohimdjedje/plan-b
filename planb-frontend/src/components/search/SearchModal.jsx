@@ -10,7 +10,7 @@ import { listingsAPI } from '../../api/listings';
  * Modal de recherche avancée style Le Bon Coin
  * Affiche l'historique des recherches et des suggestions
  */
-export default function SearchModal({ isOpen, onClose }) {
+export default function SearchModal({ isOpen, onClose, onSearch }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState([]);
@@ -47,12 +47,12 @@ export default function SearchModal({ isOpen, onClose }) {
         // Nettoyer l'historique de plus de 24h
         const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
         const validHistory = history.filter(item => item.timestamp > oneDayAgo);
-        
+
         if (validHistory.length !== history.length) {
           // Sauvegarder l'historique nettoyé
           localStorage.setItem('planb_search_history', JSON.stringify(validHistory));
         }
-        
+
         setSearchHistory(validHistory.slice(0, 10)); // Max 10 dernières recherches
       }
     } catch (error) {
@@ -83,22 +83,22 @@ export default function SearchModal({ isOpen, onClose }) {
   const generateSuggestions = async (searchQuery) => {
     try {
       setLoading(true);
-      
+
       // Appeler l'API pour obtenir des suggestions basées sur les titres réels
       const response = await searchAPI.getSuggestions(searchQuery);
       const titleSuggestions = response.suggestions || [];
-      
+
       // Rechercher des annonces correspondantes pour obtenir plus d'infos
-      const listingsResponse = await listingsAPI.getListings({ 
+      const listingsResponse = await listingsAPI.getListings({
         search: searchQuery,
-        limit: 8 
+        limit: 8
       });
       const listings = listingsResponse.data || [];
-      
+
       // Créer des suggestions enrichies
       const enrichedSuggestions = [];
       const seen = new Set();
-      
+
       // D'abord, ajouter les suggestions de titres
       titleSuggestions.forEach(title => {
         if (!seen.has(title.toLowerCase())) {
@@ -111,7 +111,7 @@ export default function SearchModal({ isOpen, onClose }) {
           });
         }
       });
-      
+
       // Ensuite, créer des suggestions basées sur les annonces
       listings.forEach(listing => {
         const suggestion = `${listing.title}`;
@@ -125,7 +125,7 @@ export default function SearchModal({ isOpen, onClose }) {
           });
         }
       });
-      
+
       setSuggestions(enrichedSuggestions.slice(0, 8));
     } catch (error) {
       console.error('Erreur suggestions:', error);
@@ -140,20 +140,20 @@ export default function SearchModal({ isOpen, onClose }) {
     try {
       const stored = localStorage.getItem('planb_search_history');
       const history = stored ? JSON.parse(stored) : [];
-      
+
       // Ajouter la nouvelle recherche
       const newEntry = {
         query: searchQuery,
         timestamp: Date.now(),
       };
-      
+
       // Éviter les doublons
       const filtered = history.filter(item => item.query !== searchQuery);
       filtered.unshift(newEntry);
-      
+
       // Limiter à 50 recherches max
       const limited = filtered.slice(0, 50);
-      
+
       localStorage.setItem('planb_search_history', JSON.stringify(limited));
     } catch (error) {
       console.error('Erreur sauvegarde historique:', error);
@@ -163,12 +163,17 @@ export default function SearchModal({ isOpen, onClose }) {
   // Exécuter une recherche
   const handleSearch = (searchQuery) => {
     if (!searchQuery.trim()) return;
-    
+
     saveToHistory(searchQuery.trim());
-    
-    // Rediriger vers les résultats de recherche
-    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     onClose();
+
+    // Si on a une callback onSearch (depuis Home), l'utiliser
+    if (onSearch) {
+      onSearch(searchQuery.trim());
+    } else {
+      // Sinon, rediriger vers la page de recherche
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   // Supprimer une entrée de l'historique
@@ -200,7 +205,7 @@ export default function SearchModal({ isOpen, onClose }) {
     const diff = now - timestamp;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor(diff / (1000 * 60));
-    
+
     if (hours >= 1) {
       return `Il y a ${hours}h`;
     } else if (minutes >= 1) {
@@ -220,23 +225,23 @@ export default function SearchModal({ isOpen, onClose }) {
   // Formater la catégorie et le type pour l'affichage
   const formatCategoryType = (category, type) => {
     if (!category && !type) return null;
-    
+
     const categoryNames = {
       'immobilier': 'Immobilier',
       'vehicule': 'Véhicule',
       'vacance': 'Vacances'
     };
-    
+
     const typeNames = {
       'vente': 'Vente',
       'location': 'Location',
       'recherche': 'Recherche'
     };
-    
+
     const parts = [];
     if (category) parts.push(categoryNames[category] || category);
     if (type) parts.push(typeNames[type] || type);
-    
+
     return parts.join(' • ');
   };
 

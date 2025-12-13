@@ -59,7 +59,20 @@ export default function Favorites() {
   // Afficher le loader pendant le chargement
   if (loading) {
     return (
-      <MobileContainer headerProps={{ showLogo: false, title: 'Mes Favoris' }}>
+      <MobileContainer
+        headerProps={{
+          showLogo: false,
+          title: 'Mes Favoris',
+          leftAction: (
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+            >
+              <ArrowLeft size={24} className="text-secondary-900" />
+            </button>
+          )
+        }}
+      >
         <div className="flex items-center justify-center h-96">
           <PlanBLoader />
         </div>
@@ -68,8 +81,21 @@ export default function Favorites() {
   }
 
   return (
-    <MobileContainer headerProps={{ showLogo: false, title: 'Mes Favoris' }}>
-      <div className="space-y-4">
+    <MobileContainer
+      headerProps={{
+        showLogo: false,
+        title: 'Mes Favoris',
+        leftAction: (
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+          >
+            <ArrowLeft size={24} className="text-secondary-900" />
+          </button>
+        )
+      }}
+    >
+      <div className="space-y-4 pb-24">
         {/* En-tête */}
         {favorites.length > 0 && (
           <GlassCard className="flex items-center justify-between">
@@ -97,24 +123,25 @@ export default function Favorites() {
 
         {/* Liste des favoris */}
         {favorites.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 auto-rows-fr">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3 pb-24">
             {favorites.map((listing, index) => (
-              <div key={listing.id} className="relative h-full">
-                <ListingCard 
-                  listing={listing} 
+              <div key={listing.id} className="relative">
+                <ListingCard
+                  listing={listing}
                   index={index}
                   initialIsFavorite={true}
                   onFavoriteToggle={handleFavoriteToggle}
                 />
-                {/* Bouton supprimer en overlay - À GAUCHE */}
+                {/* Bouton supprimer - coin supérieur droit de la carte */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRemoveFavorite(listing.id);
                   }}
-                  className="absolute top-3 left-3 z-10 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-all shadow-md"
+                  className="absolute -top-1 -right-1 z-20 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-all shadow-lg border-2 border-white"
+                  title="Supprimer des favoris"
                 >
-                  <Trash2 size={18} className="text-white" />
+                  <Trash2 size={14} className="text-white" />
                 </button>
               </div>
             ))}
@@ -148,7 +175,7 @@ export default function Favorites() {
               <div className="flex-1">
                 <h4 className="font-semibold text-blue-900 mb-1">Astuce</h4>
                 <p className="text-sm text-blue-700">
-                  Cliquez sur le cœur <Heart size={14} className="inline text-red-500 fill-red-500" /> d'une annonce pour l'ajouter à vos favoris. 
+                  Cliquez sur le cœur <Heart size={14} className="inline text-red-500 fill-red-500" /> d'une annonce pour l'ajouter à vos favoris.
                   Vos favoris sont sauvegardés localement sur votre appareil.
                 </p>
               </div>

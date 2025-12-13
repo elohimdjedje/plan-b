@@ -10,7 +10,7 @@ import Select from '../components/common/Select';
 import SpecificationsForm from '../components/listing/SpecificationsForm';
 import PlanBLoader from '../components/animations/PlanBLoader';
 import { listingsAPI } from '../api/listings';
-import { authAPI } from '../api/auth';
+import useAuthStore from '../store/authStore';
 import { toast } from 'react-hot-toast';
 
 /**
@@ -31,7 +31,7 @@ export default function EditListing() {
     title: '',
     description: '',
     price: '',
-    priceUnit: 'mois',
+    priceUnit: 'le mois',
     city: '',
     commune: '',
     quartier: '',
@@ -47,20 +47,40 @@ export default function EditListing() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Charger l'utilisateur pour vérifier le statut PRO
-        const user = await authAPI.getMe();
+        // Vérifier le token AVANT de charger les données
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('[EditListing] No token found, redirecting to login');
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          navigate('/auth');
+          return;
+        }
+
+        // Utiliser le store au lieu d'un appel API
+        const user = useAuthStore.getState().user;
+
+        // Valider que l'utilisateur est bien chargé
+        if (!user) {
+          console.error('[EditListing] No user in store, redirecting to login');
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          navigate('/auth');
+          return;
+        }
+
         setIsPro(user?.accountType === 'PRO' || user?.isPro === true);
-        
+
+        console.log('[EditListing] Loading listing', id, 'for user', user.id);
+
         // Charger l'annonce depuis l'API
         const listingData = await listingsAPI.getListing(id);
-        
+
         if (listingData) {
           setListing(listingData);
           setFormData({
             title: listingData.title || '',
             description: listingData.description || '',
             price: listingData.price || '',
-            priceUnit: listingData.priceUnit || 'mois',
+            priceUnit: listingData.priceUnit || 'le mois',
             city: listingData.city || '',
             commune: listingData.commune || '',
             quartier: listingData.quartier || '',
@@ -78,6 +98,14 @@ export default function EditListing() {
         }
       } catch (error) {
         console.error('Erreur chargement annonce:', error);
+
+        // Meilleure gestion des erreurs 401
+        if (error.response?.status === 401) {
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          navigate('/auth');
+          return;
+        }
+
         toast.error('Impossible de charger l\'annonce');
         navigate('/profile');
       } finally {
@@ -120,18 +148,18 @@ export default function EditListing() {
     try {
       // Mettre à jour l'annonce via l'API
       await listingsAPI.updateListing(id, formData);
-      
+
       toast.success('✅ Annonce modifiée avec succès !');
-      
+
       setTimeout(() => {
         navigate('/profile');
       }, 1000);
     } catch (error) {
       console.error('Erreur modification:', error);
-      
+
       // Messages d'erreur personnalisés
       let errorMessage = '';
-      
+
       if (error.response?.status === 401) {
         errorMessage = '🔐 Session expirée. Veuillez vous reconnecter.';
         setTimeout(() => navigate('/auth'), 2000);
@@ -154,7 +182,7 @@ export default function EditListing() {
       } else {
         errorMessage = error.response?.data?.message || '❌ Erreur lors de la modification. Veuillez réessayer.';
       }
-      
+
       toast.error(errorMessage, { duration: 5000 });
     } finally {
       setSaving(false);
@@ -176,7 +204,7 @@ export default function EditListing() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-blue-50 to-white">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-secondary-200">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
@@ -218,7 +246,7 @@ export default function EditListing() {
           {/* Formulaire */}
           <GlassCard>
             <h3 className="font-semibold text-lg mb-4">Informations de l'annonce</h3>
-            
+
             <div className="space-y-4">
               <Input
                 label="Titre"
@@ -274,9 +302,10 @@ export default function EditListing() {
                       value={formData.priceUnit}
                       onChange={(e) => handleChange('priceUnit', e.target.value)}
                       options={[
-                        { value: 'mois', label: '/mois' },
-                        { value: 'jour', label: '/jour' },
-                        { value: 'heure', label: '/heure' }
+                        { value: 'le mois', label: '/le mois' },
+                        { value: 'la jour', label: '/la jour' },
+                        { value: "l'heure", label: "/l'heure" },
+                        { value: 'la nuit', label: '/la nuit' }
                       ]}
                       className="w-32"
                     />
@@ -309,7 +338,7 @@ export default function EditListing() {
             <p className="text-sm text-secondary-500 mb-4">
               Renseignez au moins un moyen de contact pour que les acheteurs puissent vous joindre.
             </p>
-            
+
             <div className="space-y-4">
               <Input
                 label="Numéro WhatsApp"
@@ -318,7 +347,7 @@ export default function EditListing() {
                 placeholder="Ex: +225 07 XX XX XX XX"
                 icon={<MessageCircle size={18} className="text-green-500" />}
               />
-              
+
               <Input
                 label="Téléphone"
                 value={formData.contactPhone}
@@ -326,7 +355,7 @@ export default function EditListing() {
                 placeholder="Ex: +225 07 XX XX XX XX"
                 icon={<Phone size={18} className="text-blue-500" />}
               />
-              
+
               <Input
                 label="Email"
                 type="email"
@@ -432,7 +461,7 @@ export default function EditListing() {
               >
                 Payer 1 500 FCFA
               </Button>
-              
+
               <Button
                 variant="outline"
                 fullWidth

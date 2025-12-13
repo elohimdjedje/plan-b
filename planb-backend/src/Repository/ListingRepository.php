@@ -53,6 +53,27 @@ class ListingRepository extends ServiceEntityRepository
 
         return array_slice($listings, 0, $limit);
     }
+
+    /**
+     * Récupérer les annonces récentes (publiées il y a moins d'une semaine)
+     * Pour la section "Top Annonces" - toutes les annonces, pas seulement PRO
+     */
+    public function findRecentListings(int $limit = 20): array
+    {
+        $threeDaysAgo = new \DateTime('-3 days');
+        
+        $qb = $this->createQueryBuilder('l')
+            ->where('l.status = :status')
+            ->andWhere('l.expiresAt > :now')
+            ->andWhere('l.createdAt >= :threeDaysAgo')
+            ->setParameter('status', 'active')
+            ->setParameter('now', new \DateTime())
+            ->setParameter('threeDaysAgo', $threeDaysAgo)
+            ->orderBy('l.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        return $qb->getQuery()->getResult();
+    }
     
     /**
      * Calculer le score d'un vendeur (cache en mémoire pour éviter les calculs répétés)
@@ -114,6 +135,11 @@ class ListingRepository extends ServiceEntityRepository
                 ->setParameter('city', $filters['city']);
         }
 
+        if (isset($filters['commune'])) {
+            $qb->andWhere('l.commune = :commune')
+                ->setParameter('commune', $filters['commune']);
+        }
+
         if (isset($filters['priceMin'])) {
             $qb->andWhere('l.price >= :priceMin')
                 ->setParameter('priceMin', $filters['priceMin']);
@@ -146,18 +172,22 @@ class ListingRepository extends ServiceEntityRepository
     }
 
     /**
-     * Récupérer les annonces des vendeurs PRO
+     * Récupérer les annonces des vendeurs PRO (publiées il y a moins de 7 jours)
      */
     public function findProListings(int $limit = 10): array
     {
+        $sevenDaysAgo = new \DateTime('-7 days');
+        
         return $this->createQueryBuilder('l')
             ->join('l.user', 'u')
             ->where('l.status = :status')
             ->andWhere('l.expiresAt > :now')
             ->andWhere('u.accountType = :accountType')
+            ->andWhere('l.createdAt >= :sevenDaysAgo')
             ->setParameter('status', 'active')
             ->setParameter('now', new \DateTime())
             ->setParameter('accountType', 'PRO')
+            ->setParameter('sevenDaysAgo', $sevenDaysAgo)
             ->orderBy('l.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()

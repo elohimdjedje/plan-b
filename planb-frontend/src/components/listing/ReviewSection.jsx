@@ -9,7 +9,7 @@ import api from '../../api/axios';
 import { formatRelativeDate } from '../../utils/format';
 
 /**
- * Section pour afficher et laisser des avis sur un vendeur
+ * Section pour afficher et laisser des avis sur une annonce spécifique
  */
 export default function ReviewSection({ listing, currentUser, sellerId }) {
   const [reviews, setReviews] = useState([]);
@@ -21,17 +21,20 @@ export default function ReviewSection({ listing, currentUser, sellerId }) {
   const [submitting, setSubmitting] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
 
-  // Charger les avis du vendeur
+  // Charger les avis de l'annonce spécifique (pas du vendeur global)
   useEffect(() => {
-    loadReviews();
-  }, [sellerId]);
+    if (listing?.id) {
+      loadReviews();
+    }
+  }, [listing?.id]);
 
   const loadReviews = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/reviews/seller/${sellerId}`);
+      // Charger les avis spécifiques à cette annonce
+      const response = await api.get(`/reviews/listing/${listing.id}`);
       setReviews(response.data.reviews || []);
-      setAverageRating(response.data.stats?.averageRating || 0);
+      setAverageRating(response.data.averageRating || 0);
     } catch (error) {
       console.error('Erreur chargement avis:', error);
     } finally {
@@ -109,7 +112,7 @@ export default function ReviewSection({ listing, currentUser, sellerId }) {
   return (
     <GlassCard className="mb-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-lg">Avis sur le vendeur</h3>
+        <h3 className="font-semibold text-lg">Avis sur cette annonce</h3>
         {averageRating > 0 && (
           <div className="flex items-center gap-2">
             <StarRating value={Math.round(averageRating)} interactive={false} size={16} />
@@ -135,7 +138,7 @@ export default function ReviewSection({ listing, currentUser, sellerId }) {
       {/* Message si déjà noté */}
       {hasReviewed && (
         <div className="bg-green-50 text-green-700 p-3 rounded-xl mb-4 text-sm">
-          ✓ Vous avez déjà laissé un avis pour ce vendeur
+          ✓ Vous avez déjà laissé un avis pour cette annonce
         </div>
       )}
 

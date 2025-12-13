@@ -52,8 +52,8 @@ class Listing
     private ?string $price = null;
 
     #[ORM\Column(length: 10, nullable: true)]
-    #[Assert\Choice(choices: ['mois', 'jour', 'heure'], message: 'Unité de prix invalide')]
-    private ?string $priceUnit = 'mois';
+    #[Assert\Choice(choices: ['le mois', 'la jour', "l'heure", 'la nuit'], message: 'Unité de prix invalide')]
+    private ?string $priceUnit = 'le mois';
 
     #[ORM\Column(length: 3)]
     #[Assert\Choice(choices: ['XOF', 'EUR', 'USD'], message: 'Devise non supportée')]
@@ -127,7 +127,7 @@ class Listing
     /**
      * @var Collection<int, Image>
      */
-    #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'listing', orphanRemoval: true, cascade: ['persist'])]
+    #[ORM\OneToMany(targetEntity: Image::class, mappedBy: 'listing', orphanRemoval: true, cascade: ['persist', 'remove'])]
     #[ORM\OrderBy(['orderPosition' => 'ASC'])]
     private Collection $images;
 

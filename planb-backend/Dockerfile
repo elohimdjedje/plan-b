@@ -36,6 +36,12 @@ COPY . .
 # Installer les dépendances PHP (avec dev pour DoctrineFixturesBundle)
 RUN composer install --optimize-autoloader
 
+# Copy custom PHP-FPM configuration
+COPY docker/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copy PHP upload configuration
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Permissions
 RUN chown -R www-data:www-data /var/www/html
 

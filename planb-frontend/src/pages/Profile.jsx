@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Heart, LogOut, Crown, TrendingUp, Eye, MoreVertical, Trash2, Calendar, Edit, CheckCircle2, RefreshCw, Home, Key, Star } from 'lucide-react';
+import { Settings, Heart, LogOut, Crown, TrendingUp, Eye, MoreVertical, Trash2, Calendar, Edit, CheckCircle2, RefreshCw, Home, Key, Star, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileContainer from '../components/layout/MobileContainer';
 import GlassCard from '../components/common/GlassCard';
@@ -11,22 +11,24 @@ import StarRating from '../components/common/StarRating';
 import { useAuthStore } from '../store/authStore';
 import { formatPrice, formatRelativeDate } from '../utils/format';
 import { toast } from 'react-hot-toast';
-import { 
-  getSubscription, 
-  isSubscriptionActive, 
+import {
+  getSubscription,
+  isSubscriptionActive,
   getDaysRemaining,
-  updateSubscriptionStatus 
+  updateSubscriptionStatus
 } from '../utils/subscription';
-import { getCurrentUser, getUserProfile } from '../utils/auth';
+import { getUserProfile } from '../utils/auth';
 import { listingsAPI } from '../api/listings';
 import api from '../api/axios';
-import { 
-  updateListing, 
-  deleteListing
+import {
+  updateListing,
+  deleteListing,
+  getAllListings
 } from '../utils/listings';
 import { checkFavoritesChanges } from '../utils/notifications';
 import { getImageUrl, IMAGE_PLACEHOLDER } from '../utils/images';
 import PlanBLoader from '../components/animations/PlanBLoader';
+import { getDrafts, deleteDraft } from '../services/draftsService';
 
 /**
  * Page Profil utilisateur
@@ -34,9 +36,10 @@ import PlanBLoader from '../components/animations/PlanBLoader';
 export default function Profile() {
   const navigate = useNavigate();
   const { user, accountType = 'FREE', logout, updateUser, upgradeToPro } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('active'); // active, expired, sold
+  const [activeTab, setActiveTab] = useState('active'); // active, expired, sold, drafts
   const [openMenuId, setOpenMenuId] = useState(null); // ID de l'annonce dont le menu est ouvert
   const [listings, setListings] = useState([]); // État pour gérer les annonces
+  const [drafts, setDrafts] = useState([]); // État pour les brouillons
   const [subscription, setSubscription] = useState(null);
   // Initialiser hasPro depuis le store pour affichage immédiat
   const [hasPro, setHasPro] = useState(accountType === 'PRO' || user?.isPro || user?.accountType === 'PRO');
@@ -54,15 +57,25 @@ export default function Profile() {
 
   const loadUserData = async () => {
     try {
-      // Récupérer l'utilisateur réel depuis l'API
+      // IMPORTANT: Toujours récupérer l'utilisateur depuis l'API (pas le cache)
+      // Cela garantit que les annonces correspondent au bon utilisateur
       const currentUser = await getUserProfile();
-      
+
       if (!currentUser) {
         // Si pas d'utilisateur, rediriger vers la connexion
         navigate('/auth');
         return;
       }
-      
+
+      // Vérifier la cohérence: l'utilisateur du store correspond-il à l'utilisateur de l'API?
+      if (user?.id && user.id !== currentUser.id) {
+        console.warn('[PROFILE] Incohérence détectée! Store user:', user.id, 'API user:', currentUser.id);
+        // Forcer la mise à jour du store avec les bonnes données
+        logout();
+        navigate('/auth');
+        return;
+      }
+
       // Charger les statistiques d'avis du vendeur (en parallèle, non-bloquant)
       api.get(`/reviews/seller/${currentUser.id}`)
         .then(reviewsResponse => {
@@ -72,22 +85,22 @@ export default function Profile() {
             reviewsCount: reviewsResponse.data.stats?.totalReviews || 0
           }));
         })
-        .catch(() => {});
+        .catch(() => { });
 
       setCurrentUserProfile(currentUser);
-      
+
       // Mettre à jour le store avec les données fraîches pour le cache
       updateUser(currentUser);
-      
+
       // Vérifier si l'utilisateur est PRO
       const isPro = currentUser?.accountType === 'PRO' || currentUser?.isPro === true;
       setHasPro(isPro);
-      
+
       // Synchroniser le store avec le statut PRO du backend
       if (isPro && accountType !== 'PRO') {
         upgradeToPro();
       }
-      
+
       // Charger les annonces de l'utilisateur
       try {
         const response = await listingsAPI.getMyListings();
@@ -95,7 +108,11 @@ export default function Profile() {
       } catch (err) {
         setListings([]);
       }
-      
+
+      // Charger les brouillons depuis le localStorage
+      const savedDrafts = getDrafts();
+      setDrafts(savedDrafts);
+
     } catch (error) {
       // Si erreur et pas d'utilisateur en cache, rediriger
       if (!user) {
@@ -117,19 +134,46 @@ export default function Profile() {
   // Utiliser les annonces chargées
   const currentListings = listings || [];
 
-  const filteredListings = currentListings.filter(l => {
-    if (activeTab === 'active') return l.status === 'active';
-    if (activeTab === 'expired') return l.status === 'expired';
-    if (activeTab === 'sold') return l.status === 'sold';
-    return true;
-  });
+  // Fonction pour vérifier si une annonce est expirée
+  const isExpired = (listing) => {
+    if (listing.status === 'expired') return true;
+    if (listing.expiresAt) {
+      return new Date(listing.expiresAt) < new Date();
+    }
+    return false;
+  };
 
-  // Calculer les statistiques réelles
+  const filteredListings = activeTab === 'drafts' 
+    ? [] // Les brouillons sont gérés séparément
+    : currentListings.filter(l => {
+        if (activeTab === 'active') return l.status === 'active' && !isExpired(l);
+        if (activeTab === 'expired') return isExpired(l);
+        if (activeTab === 'sold') return l.status === 'sold';
+        return true;
+      });
+
+  // Calculer les statistiques réelles (exclure les annonces expirées)
   const realStats = {
-    // Nombre total d'annonces actives
-    listings: currentListings.filter(l => l.status === 'active').length,
+    // Nombre total d'annonces vraiment actives (pas expirées)
+    listings: currentListings.filter(l => l.status === 'active' && !isExpired(l)).length,
     // Somme de toutes les vues de toutes les annonces
     views: currentListings.reduce((total, listing) => total + (listing.viewsCount || 0), 0)
+  };
+
+  // Supprimer un brouillon
+  const handleDeleteDraft = (draftId) => {
+    if (window.confirm('Supprimer ce brouillon ?')) {
+      deleteDraft(draftId);
+      setDrafts(getDrafts());
+      toast.success('Brouillon supprimé');
+    }
+  };
+
+  // Publier un brouillon (rediriger vers Publish avec les données pré-remplies)
+  const handlePublishDraft = (draft) => {
+    // Stocker le brouillon à publier dans sessionStorage
+    sessionStorage.setItem('draft_to_publish', JSON.stringify(draft));
+    navigate('/publish?from=draft&id=' + draft.id);
   };
 
   const handleLogout = () => {
@@ -146,48 +190,50 @@ export default function Profile() {
 
   const handleDeleteListing = async (listingId) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
-      // Supprimer de localStorage
-      deleteListing(listingId);
-      
-      // Mettre à jour l'état local
-      setListings((prev) => (prev || mockListings).filter(l => l.id !== listingId));
-      
-      // Vérifier les changements pour notifier les favoris
-      const updatedListings = await getAllListings();
-      checkFavoritesChanges(updatedListings);
-      
-      toast.success('✅ Annonce supprimée');
+      // ⚡ Fermer le menu et mettre à jour l'UI immédiatement
       setOpenMenuId(null);
+      setListings((prev) => prev.filter(l => l.id !== listingId));
+      toast.success('✅ Annonce supprimée');
+
+      // 🔄 Appel API en arrière-plan
+      try {
+        await deleteListing(listingId);
+      } catch (error) {
+        console.error('Erreur suppression:', error);
+        toast.error('❌ Erreur lors de la suppression');
+        loadUserData(); // Recharger pour restaurer l'état correct
+      }
     }
   };
 
   const handleMarkAsSold = async (listingId) => {
     const listing = currentListings.find(l => l.id === listingId);
     if (!listing) return;
-    
+
     const isRental = listing.type === 'location' || listing.category === 'location';
-    const message = isRental 
-      ? 'Marquer cette location comme occupée ?' 
+    const message = isRental
+      ? 'Marquer cette location comme occupée ?'
       : 'Marquer cette annonce comme vendue ?';
-    const successMsg = isRental 
-      ? '✅ Location marquée comme occupée' 
+    const successMsg = isRental
+      ? '✅ Location marquée comme occupée'
       : '✅ Annonce marquée comme vendue';
-    
+
     if (window.confirm(message)) {
-      // Mettre à jour dans localStorage
-      updateListing(listingId, { status: 'sold' });
-      
-      // Mettre à jour l'état local
-      setListings((prev) => (prev || mockListings).map(l => 
+      // ⚡ Fermer le menu et mettre à jour l'UI immédiatement
+      setOpenMenuId(null);
+      setListings((prev) => prev.map(l =>
         l.id === listingId ? { ...l, status: 'sold' } : l
       ));
-      
-      // Vérifier les changements pour notifier les favoris
-      const updatedListings = await getAllListings();
-      checkFavoritesChanges(updatedListings);
-      
       toast.success(successMsg);
-      setOpenMenuId(null);
+
+      // 🔄 Appel API en arrière-plan
+      try {
+        await updateListing(listingId, { status: 'sold' });
+      } catch (error) {
+        console.error('Erreur mise à jour:', error);
+        toast.error('❌ Erreur lors de la mise à jour');
+        loadUserData(); // Recharger pour restaurer l'état correct
+      }
     }
   };
 
@@ -200,22 +246,22 @@ export default function Profile() {
     } else {
       // PRO : Republier gratuitement
       if (window.confirm('Republier cette annonce ?')) {
-        updateListing(listingId, { 
-          status: 'active',
-          createdAt: new Date().toISOString() 
-        });
-        
-        setListings((prev) => (prev || mockListings).map(l => 
+        // ⚡ Fermer le menu et mettre à jour l'UI immédiatement
+        setOpenMenuId(null);
+        setListings((prev) => prev.map(l =>
           l.id === listingId ? { ...l, status: 'active', createdAt: new Date().toISOString() } : l
         ));
-        
-        // Vérifier les changements pour notifier les favoris
-        const updatedListings = await getAllListings();
-        checkFavoritesChanges(updatedListings);
-        
-        toast.success('✅ Annonce republiée avec succès !');
-        setOpenMenuId(null);
         setActiveTab('active');
+        toast.success('✅ Annonce republiée avec succès !');
+
+        // 🔄 Appel API en arrière-plan
+        try {
+          await updateListing(listingId, { status: 'active' });
+        } catch (error) {
+          console.error('Erreur republication:', error);
+          toast.error('❌ Erreur lors de la republication');
+          loadUserData(); // Recharger pour restaurer l'état correct
+        }
       }
     }
   };
@@ -233,19 +279,18 @@ export default function Profile() {
             {/* Cercle avec initiales */}
             <div className="relative flex-shrink-0">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white flex items-center justify-center text-primary-600 text-2xl md:text-3xl font-bold">
-                {displayUser?.fullName ? 
+                {displayUser?.fullName ?
                   displayUser.fullName.split(' ').map(n => n[0]).join('').toUpperCase() :
-                  displayUser?.firstName ? 
+                  displayUser?.firstName ?
                     (displayUser.firstName[0] + (displayUser.lastName?.[0] || '')).toUpperCase() :
                     'U'
                 }
               </div>
               {/* Badge statut */}
-              <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                (hasPro || accountType === 'PRO')
-                  ? 'bg-yellow-400 text-yellow-900' 
+              <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-xs font-bold ${(hasPro || accountType === 'PRO')
+                  ? 'bg-yellow-400 text-yellow-900'
                   : 'bg-white text-secondary-600'
-              }`}>
+                }`}>
                 {(hasPro || accountType === 'PRO') ? 'PRO' : 'FREE'}
               </div>
             </div>
@@ -300,14 +345,29 @@ export default function Profile() {
         </div>
 
         {/* Bio/Description de l'utilisateur */}
-        {displayUser.bio && (
-          <GlassCard>
-            <h3 className="font-semibold text-lg mb-3">À propos</h3>
+        <GlassCard>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-lg">À propos</h3>
+            <button
+              onClick={() => navigate('/settings')}
+              className="text-primary-500 text-sm hover:underline"
+            >
+              Modifier
+            </button>
+          </div>
+          {displayUser.bio ? (
             <p className="text-secondary-700 leading-relaxed whitespace-pre-line">
               {displayUser.bio}
             </p>
-          </GlassCard>
-        )}
+          ) : (
+            <button
+              onClick={() => navigate('/settings')}
+              className="w-full py-4 border-2 border-dashed border-secondary-300 rounded-xl text-secondary-500 hover:border-primary-400 hover:text-primary-500 transition-colors"
+            >
+              + Ajouter une bio pour vous présenter
+            </button>
+          )}
+        </GlassCard>
 
         {/* Section abonnement */}
         {!hasPro ? (
@@ -361,14 +421,16 @@ export default function Profile() {
           <h3 className="font-semibold text-lg mb-4">
             Mes annonces ({listings.length})
           </h3>
-          
+
           {/* Tabs - Filtres des annonces */}
           <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto scrollbar-hide pb-2">
             {[
               { id: 'active', label: 'Actives', icon: '✓' },
-              // FREE a les annonces expirées, PRO n'a pas de limite
-              ...(!hasPro && accountType !== 'PRO' ? [{ id: 'expired', label: 'Expirées', icon: '⏱' }] : []),
+              // Onglet Expirées pour tous les utilisateurs
+              { id: 'expired', label: 'Expirées', icon: '⏱' },
               { id: 'sold', label: 'Vendues', icon: '✔' },
+              // Onglet Brouillons si il y en a
+              ...(drafts.length > 0 ? [{ id: 'drafts', label: `Brouillons (${drafts.length})`, icon: '📝' }] : []),
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -401,7 +463,7 @@ export default function Profile() {
                     className="w-20 h-20 object-cover rounded-lg cursor-pointer"
                     onClick={() => navigate(`/listing/${listing.id}`)}
                   />
-                  <div 
+                  <div
                     className="flex-1 min-w-0 cursor-pointer"
                     onClick={() => navigate(`/listing/${listing.id}`)}
                   >
@@ -418,7 +480,7 @@ export default function Profile() {
                       <span>{formatRelativeDate(listing.createdAt)}</span>
                     </div>
                   </div>
-                  
+
                   {/* Bouton menu trois points */}
                   <div className="relative">
                     <button
@@ -454,7 +516,7 @@ export default function Profile() {
                               <span className="ml-auto text-xs text-primary-500 font-semibold">1 500 F</span>
                             )}
                           </button>
-                          
+
                           {listing.status === 'active' && (
                             <button
                               onClick={(e) => {
@@ -476,7 +538,7 @@ export default function Profile() {
                               )}
                             </button>
                           )}
-                          
+
                           {listing.status === 'expired' && (
                             <button
                               onClick={(e) => {
@@ -492,7 +554,7 @@ export default function Profile() {
                               )}
                             </button>
                           )}
-                          
+
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -509,6 +571,60 @@ export default function Profile() {
                   </div>
                 </div>
               ))
+            ) : activeTab === 'drafts' ? (
+              // Affichage des brouillons
+              drafts.length > 0 ? (
+                drafts.map((draft) => (
+                  <div
+                    key={draft.id}
+                    className="relative flex gap-3 p-3 bg-amber-50/50 rounded-xl hover:bg-amber-50 transition-all border border-amber-200/50"
+                  >
+                    {/* Image placeholder - les previews blob: ne persistent pas */}
+                    <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg flex items-center justify-center">
+                      <span className="text-3xl">📝</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-bold rounded-full">
+                          BROUILLON
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-sm line-clamp-1 text-secondary-900">
+                        {draft.title || 'Sans titre'}
+                      </h4>
+                      <p className="text-primary-500 font-bold text-sm">
+                        {draft.price ? `${formatPrice(draft.price)} FCFA` : 'Prix non défini'}
+                      </p>
+                      <p className="text-xs text-secondary-500 mt-1">
+                        Sauvegardé {formatRelativeDate(draft.createdAt)}
+                      </p>
+                      <p className="text-[10px] text-amber-600 mt-0.5">
+                        📷 Ajoutez vos photos pour publier
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handlePublishDraft(draft)}
+                        className="px-3 py-1.5 bg-primary-500 text-white text-xs font-medium rounded-lg hover:bg-primary-600 transition-colors"
+                      >
+                        Compléter
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDraft(draft.id)}
+                        className="px-3 py-1.5 bg-red-100 text-red-600 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-secondary-500">
+                  <p>Aucun brouillon</p>
+                </div>
+              )
             ) : (
               <div className="text-center py-8 text-secondary-500">
                 <p>Aucune annonce {activeTab === 'active' ? 'active' : activeTab}</p>
@@ -542,6 +658,17 @@ export default function Profile() {
               >
                 <TrendingUp size={20} />
                 <span className="font-medium">Mes statistiques</span>
+              </button>
+            )}
+            {/* Bouton Admin - visible uniquement pour les admins */}
+            {(user?.roles?.includes('ROLE_ADMIN') || currentUserProfile?.roles?.includes('ROLE_ADMIN')) && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="w-full p-3 md:p-4 text-left text-purple-700 hover:bg-purple-500/10 backdrop-blur-sm rounded-xl transition-all flex items-center gap-3 border border-purple-300 hover:border-purple-500"
+              >
+                <Shield size={20} />
+                <span className="font-medium">Dashboard Admin</span>
+                <span className="ml-auto text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Admin</span>
               </button>
             )}
             <button

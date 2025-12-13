@@ -226,10 +226,30 @@ class AdminController extends AbstractController
             return $this->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
+        $startDate = new \DateTimeImmutable();
+        
         $user->setAccountType('PRO');
         $user->setIsLifetimePro(true);
         $user->setSubscriptionExpiresAt(null);
+        $user->setSubscriptionStartDate($startDate);
         $user->setUpdatedAt(new \DateTime());
+
+        // Créer ou mettre à jour l'objet Subscription pour la cohérence
+        $subscriptionRepo = $this->entityManager->getRepository(\App\Entity\Subscription::class);
+        $subscription = $subscriptionRepo->findOneBy(['user' => $user]);
+        
+        if (!$subscription) {
+            $subscription = new \App\Entity\Subscription();
+            $subscription->setUser($user);
+            $subscription->setStartDate($startDate);
+            $subscription->setCreatedAt($startDate);
+            $this->entityManager->persist($subscription);
+        }
+        
+        $subscription->setAccountType('PRO');
+        $subscription->setStatus('lifetime');
+        $subscription->setExpiresAt(null);
+        $subscription->setUpdatedAt($startDate);
 
         $this->entityManager->flush();
 
@@ -238,9 +258,12 @@ class AdminController extends AbstractController
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
+                'fullName' => $user->getFullName(),
                 'accountType' => 'PRO',
+                'isPro' => true,
                 'isLifetimePro' => true,
-                'subscriptionExpiresAt' => null
+                'subscriptionExpiresAt' => null,
+                'subscriptionStartDate' => $startDate->format('c')
             ]
         ]);
     }
@@ -476,6 +499,529 @@ class AdminController extends AbstractController
                 'usersByDay' => $usersByDay,
                 'listingsByDay' => $listingsByDay
             ]
+        ]);
+    }
+
+    /**
+     * Audit complet : Vérification de l'intégrité des données
+     * - Liste tous les utilisateurs avec leurs statuts
+     * - Vérifie que chaque annonce appartient au bon utilisateur
+     * - Détecte les anomalies
+     */
+    #[Route('/audit', name: 'app_admin_audit', methods: ['GET'])]
+    public function auditData(): JsonResponse
+    {
+        $anomalies = [];
+        
+        // 1. Récupérer tous les utilisateurs avec leurs stats
+        $users = $this->userRepository->findAll();
+        $usersData = [];
+        
+        foreach ($users as $user) {
+            $listings = $user->getListings();
+            $listingsData = [];
+            
+            foreach ($listings as $listing) {
+                // Vérifier l'intégrité : l'annonce appartient-elle vraiment à cet utilisateur ?
+                if ($listing->getUser()->getId() !== $user->getId()) {
+                    $anomalies[] = [
+                        'type' => 'LISTING_OWNER_MISMATCH',
+                        'severity' => 'CRITICAL',
+                        'message' => "L'annonce #{$listing->getId()} est liée à l'utilisateur #{$user->getId()} mais getUser() retourne #{$listing->getUser()->getId()}",
+                        'listingId' => $listing->getId(),
+                        'expectedUserId' => $user->getId(),
+                        'actualUserId' => $listing->getUser()->getId()
+                    ];
+                }
+                
+                $listingsData[] = [
+                    'id' => $listing->getId(),
+                    'title' => $listing->getTitle(),
+                    'status' => $listing->getStatus(),
+                    'createdAt' => $listing->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'expiresAt' => $listing->getExpiresAt()?->format('Y-m-d H:i:s'),
+                    'ownerId' => $listing->getUser()->getId()
+                ];
+            }
+            
+            // Vérifier cohérence du statut PRO
+            $isPro = $user->isPro();
+            $accountType = $user->getAccountType();
+            $isLifetimePro = $user->isLifetimePro();
+            $subscriptionExpires = $user->getSubscriptionExpiresAt();
+            
+            $proStatus = 'OK';
+            if ($accountType === 'PRO' && !$isPro && !$isLifetimePro && (!$subscriptionExpires || $subscriptionExpires < new \DateTime())) {
+                $proStatus = 'EXPIRED';
+            }
+            if ($isLifetimePro && $accountType !== 'PRO') {
+                $anomalies[] = [
+                    'type' => 'PRO_STATUS_MISMATCH',
+                    'severity' => 'WARNING',
+                    'message' => "Utilisateur #{$user->getId()} est lifetimePro mais accountType est {$accountType}",
+                    'userId' => $user->getId()
+                ];
+            }
+            
+            $usersData[] = [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'fullName' => $user->getFullName(),
+                'phone' => $user->getPhone(),
+                'accountType' => $accountType,
+                'isPro' => $isPro,
+                'isLifetimePro' => $isLifetimePro,
+                'subscriptionExpiresAt' => $subscriptionExpires?->format('Y-m-d H:i:s'),
+                'proStatus' => $proStatus,
+                'createdAt' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
+                'totalListings' => count($listingsData),
+                'listingsByStatus' => [
+                    'active' => count(array_filter($listingsData, fn($l) => $l['status'] === 'active')),
+                    'draft' => count(array_filter($listingsData, fn($l) => $l['status'] === 'draft')),
+                    'expired' => count(array_filter($listingsData, fn($l) => $l['status'] === 'expired')),
+                    'sold' => count(array_filter($listingsData, fn($l) => $l['status'] === 'sold')),
+                    'suspended' => count(array_filter($listingsData, fn($l) => $l['status'] === 'suspended'))
+                ],
+                'listings' => $listingsData
+            ];
+        }
+        
+        // 2. Vérifier les annonces orphelines (sans utilisateur valide)
+        $allListings = $this->listingRepository->findAll();
+        foreach ($allListings as $listing) {
+            if (!$listing->getUser()) {
+                $anomalies[] = [
+                    'type' => 'ORPHAN_LISTING',
+                    'severity' => 'CRITICAL',
+                    'message' => "L'annonce #{$listing->getId()} n'a pas d'utilisateur associé",
+                    'listingId' => $listing->getId()
+                ];
+            }
+        }
+        
+        // 3. Statistiques globales
+        $stats = [
+            'totalUsers' => count($users),
+            'usersByAccountType' => [
+                'FREE' => count(array_filter($usersData, fn($u) => $u['accountType'] === 'FREE')),
+                'PRO' => count(array_filter($usersData, fn($u) => $u['accountType'] === 'PRO'))
+            ],
+            'proUsers' => [
+                'lifetime' => count(array_filter($usersData, fn($u) => $u['isLifetimePro'])),
+                'subscription' => count(array_filter($usersData, fn($u) => $u['isPro'] && !$u['isLifetimePro'])),
+                'expired' => count(array_filter($usersData, fn($u) => $u['proStatus'] === 'EXPIRED'))
+            ],
+            'totalListings' => count($allListings),
+            'listingsByStatus' => [
+                'active' => $this->listingRepository->count(['status' => 'active']),
+                'draft' => $this->listingRepository->count(['status' => 'draft']),
+                'expired' => $this->listingRepository->count(['status' => 'expired']),
+                'sold' => $this->listingRepository->count(['status' => 'sold']),
+                'suspended' => $this->listingRepository->count(['status' => 'suspended'])
+            ],
+            'totalAnomalies' => count($anomalies),
+            'anomaliesBySeverity' => [
+                'CRITICAL' => count(array_filter($anomalies, fn($a) => $a['severity'] === 'CRITICAL')),
+                'WARNING' => count(array_filter($anomalies, fn($a) => $a['severity'] === 'WARNING'))
+            ]
+        ];
+        
+        return $this->json([
+            'audit' => [
+                'generatedAt' => (new \DateTime())->format('Y-m-d H:i:s'),
+                'stats' => $stats,
+                'anomalies' => $anomalies,
+                'users' => $usersData
+            ]
+        ]);
+    }
+
+    /**
+     * Résumé rapide des utilisateurs et leurs comptes
+     */
+    #[Route('/audit/summary', name: 'app_admin_audit_summary', methods: ['GET'])]
+    public function auditSummary(): JsonResponse
+    {
+        $users = $this->userRepository->findAll();
+        
+        $summary = [];
+        foreach ($users as $user) {
+            $listings = $user->getListings();
+            
+            $summary[] = [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'fullName' => $user->getFullName(),
+                'accountType' => $user->getAccountType(),
+                'isPro' => $user->isPro(),
+                'isLifetimePro' => $user->isLifetimePro(),
+                'subscriptionExpiresAt' => $user->getSubscriptionExpiresAt()?->format('Y-m-d'),
+                'createdAt' => $user->getCreatedAt()->format('Y-m-d'),
+                'activeListings' => $listings->filter(fn($l) => $l->getStatus() === 'active')->count(),
+                'totalListings' => $listings->count()
+            ];
+        }
+        
+        // Trier par date de création (plus récent d'abord)
+        usort($summary, fn($a, $b) => $b['createdAt'] <=> $a['createdAt']);
+        
+        return $this->json([
+            'totalUsers' => count($summary),
+            'freeUsers' => count(array_filter($summary, fn($u) => $u['accountType'] === 'FREE')),
+            'proUsers' => count(array_filter($summary, fn($u) => $u['accountType'] === 'PRO')),
+            'users' => $summary
+        ]);
+    }
+
+    /**
+     * Liste des paiements en attente de vérification
+     * Pour les paiements Wave Link sans API
+     */
+    #[Route('/payments/pending', name: 'app_admin_pending_payments', methods: ['GET'])]
+    public function getPendingPayments(Request $request): JsonResponse
+    {
+        $limit = min($request->query->get('limit', 50), 100);
+        $offset = $request->query->get('offset', 0);
+
+        $qb = $this->paymentRepository->createQueryBuilder('p')
+            ->where('p.status = :pending OR p.status = :pendingVerification')
+            ->setParameter('pending', 'pending')
+            ->setParameter('pendingVerification', 'pending_verification')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->orderBy('p.createdAt', 'DESC');
+
+        $payments = $qb->getQuery()->getResult();
+
+        $data = array_map(function($payment) {
+            $user = $payment->getUser();
+            $metadata = $payment->getMetadata() ?? [];
+            return [
+                'id' => $payment->getId(),
+                'amount' => $payment->getAmount(),
+                'currency' => $payment->getCurrency(),
+                'status' => $payment->getStatus(),
+                'description' => $payment->getDescription(),
+                'paymentMethod' => $payment->getPaymentMethod(),
+                'createdAt' => $payment->getCreatedAt()->format('c'),
+                'metadata' => $metadata,
+                'user' => [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'phone' => $user->getPhone(),
+                    'fullName' => $user->getFullName(),
+                    'accountType' => $user->getAccountType()
+                ]
+            ];
+        }, $payments);
+
+        // Compter le total
+        $countQb = $this->paymentRepository->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.status = :pending OR p.status = :pendingVerification')
+            ->setParameter('pending', 'pending')
+            ->setParameter('pendingVerification', 'pending_verification');
+        $total = $countQb->getQuery()->getSingleScalarResult();
+
+        return $this->json([
+            'payments' => $data,
+            'total' => (int) $total,
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+    }
+
+    /**
+     * Confirmer un paiement et activer le PRO
+     */
+    #[Route('/payments/{id}/confirm', name: 'app_admin_confirm_payment', methods: ['PUT'])]
+    public function confirmPayment(int $id): JsonResponse
+    {
+        $payment = $this->paymentRepository->find($id);
+
+        if (!$payment) {
+            return $this->json(['error' => 'Paiement non trouvé'], 404);
+        }
+
+        $user = $payment->getUser();
+        $metadata = $payment->getMetadata() ?? [];
+        $months = $metadata['months'] ?? 1;
+        $durationDays = $months * 30;
+
+        // Calculer la date d'expiration
+        $startDate = new \DateTimeImmutable();
+        $currentExpiry = $user->getSubscriptionExpiresAt();
+        if ($currentExpiry && $currentExpiry > $startDate) {
+            $expiresAt = $currentExpiry->modify("+{$durationDays} days");
+        } else {
+            $expiresAt = $startDate->modify("+{$durationDays} days");
+        }
+
+        // Mettre à jour le paiement
+        $payment->setStatus('completed');
+        $payment->setCompletedAt(new \DateTimeImmutable());
+
+        // Mettre à jour l'utilisateur
+        $user->setAccountType('PRO');
+        $user->setSubscriptionExpiresAt($expiresAt);
+        $user->setUpdatedAt(new \DateTime());
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Paiement confirmé et compte PRO activé',
+            'payment' => [
+                'id' => $payment->getId(),
+                'status' => 'completed',
+                'amount' => $payment->getAmount()
+            ],
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'fullName' => $user->getFullName(),
+                'accountType' => 'PRO',
+                'subscriptionExpiresAt' => $expiresAt->format('c')
+            ]
+        ]);
+    }
+
+    /**
+     * Rejeter un paiement
+     */
+    #[Route('/payments/{id}/reject', name: 'app_admin_reject_payment', methods: ['PUT'])]
+    public function rejectPayment(int $id, Request $request): JsonResponse
+    {
+        $payment = $this->paymentRepository->find($id);
+
+        if (!$payment) {
+            return $this->json(['error' => 'Paiement non trouvé'], 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $reason = $data['reason'] ?? 'Paiement non reçu';
+
+        $payment->setStatus('rejected');
+        $payment->setErrorMessage($reason);
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Paiement rejeté',
+            'payment' => [
+                'id' => $payment->getId(),
+                'status' => 'rejected',
+                'reason' => $reason
+            ]
+        ]);
+    }
+
+    /**
+     * Activer manuellement le PRO pour un utilisateur (sans paiement)
+     */
+    #[Route('/users/{id}/activate-pro', name: 'app_admin_activate_pro', methods: ['PUT'])]
+    public function activatePro(int $id, Request $request): JsonResponse
+    {
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $months = $data['months'] ?? 1;
+        $durationDays = $months * 30;
+
+        // Calculer la date d'expiration
+        $startDate = new \DateTimeImmutable();
+        $currentExpiry = $user->getSubscriptionExpiresAt();
+        if ($currentExpiry && $currentExpiry > $startDate) {
+            $expiresAt = $currentExpiry->modify("+{$durationDays} days");
+        } else {
+            $expiresAt = $startDate->modify("+{$durationDays} days");
+            // Définir la date de début seulement si c'est une nouvelle activation
+            $user->setSubscriptionStartDate($startDate);
+        }
+
+        $user->setAccountType('PRO');
+        $user->setSubscriptionExpiresAt($expiresAt);
+        $user->setUpdatedAt(new \DateTime());
+
+        // Créer ou mettre à jour l'objet Subscription pour la cohérence
+        $subscriptionRepo = $this->entityManager->getRepository(\App\Entity\Subscription::class);
+        $subscription = $subscriptionRepo->findOneBy(['user' => $user]);
+        
+        if (!$subscription) {
+            $subscription = new \App\Entity\Subscription();
+            $subscription->setUser($user);
+            $subscription->setAccountType('PRO');
+            $subscription->setStartDate($startDate);
+            $subscription->setCreatedAt($startDate);
+            $this->entityManager->persist($subscription);
+        }
+        
+        $subscription->setStatus('active');
+        $subscription->setExpiresAt($expiresAt);
+        $subscription->setUpdatedAt($startDate);
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => "Compte PRO activé pour {$months} mois",
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'fullName' => $user->getFullName(),
+                'accountType' => 'PRO',
+                'isPro' => true,
+                'subscriptionExpiresAt' => $expiresAt->format('c'),
+                'subscriptionStartDate' => $user->getSubscriptionStartDate()?->format('c')
+            ]
+        ]);
+    }
+
+    /**
+     * Désactiver le PRO d'un utilisateur
+     */
+    #[Route('/users/{id}/deactivate-pro', name: 'app_admin_deactivate_pro', methods: ['PUT'])]
+    public function deactivatePro(int $id): JsonResponse
+    {
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        $user->setAccountType('FREE');
+        $user->setSubscriptionExpiresAt(null);
+        $user->setIsLifetimePro(false);
+        $user->setUpdatedAt(new \DateTime());
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Compte PRO désactivé',
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'fullName' => $user->getFullName(),
+                'accountType' => 'FREE'
+            ]
+        ]);
+    }
+
+    /**
+     * Liste tous les paiements
+     */
+    #[Route('/payments', name: 'app_admin_all_payments', methods: ['GET'])]
+    public function getAllPayments(Request $request): JsonResponse
+    {
+        $limit = min($request->query->get('limit', 50), 100);
+        $offset = $request->query->get('offset', 0);
+        $status = $request->query->get('status');
+
+        $qb = $this->paymentRepository->createQueryBuilder('p')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->orderBy('p.createdAt', 'DESC');
+
+        if ($status) {
+            $qb->andWhere('p.status = :status')
+                ->setParameter('status', $status);
+        }
+
+        $payments = $qb->getQuery()->getResult();
+
+        $data = array_map(function($payment) {
+            $user = $payment->getUser();
+            return [
+                'id' => $payment->getId(),
+                'amount' => $payment->getAmount(),
+                'currency' => $payment->getCurrency(),
+                'status' => $payment->getStatus(),
+                'description' => $payment->getDescription(),
+                'paymentMethod' => $payment->getPaymentMethod(),
+                'createdAt' => $payment->getCreatedAt()->format('c'),
+                'completedAt' => $payment->getCompletedAt()?->format('c'),
+                'metadata' => $payment->getMetadata(),
+                'user' => [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'phone' => $user->getPhone(),
+                    'fullName' => $user->getFullName()
+                ]
+            ];
+        }, $payments);
+
+        // Compter le total
+        $countQb = $this->paymentRepository->createQueryBuilder('p')
+            ->select('COUNT(p.id)');
+        if ($status) {
+            $countQb->andWhere('p.status = :status')
+                ->setParameter('status', $status);
+        }
+        $total = $countQb->getQuery()->getSingleScalarResult();
+
+        return $this->json([
+            'payments' => $data,
+            'total' => (int) $total,
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+    }
+
+    /**
+     * Demandes de paiement avec preuves (captures d'écran)
+     * Les utilisateurs peuvent soumettre leur preuve de paiement
+     */
+    #[Route('/payment-requests', name: 'app_admin_payment_requests', methods: ['GET'])]
+    public function getPaymentRequests(Request $request): JsonResponse
+    {
+        $limit = min($request->query->get('limit', 50), 100);
+        $offset = $request->query->get('offset', 0);
+
+        // Chercher les paiements avec preuve (metadata contient 'proof')
+        $qb = $this->paymentRepository->createQueryBuilder('p')
+            ->where('p.status = :pending OR p.status = :pendingVerification')
+            ->setParameter('pending', 'pending')
+            ->setParameter('pendingVerification', 'pending_verification')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->orderBy('p.createdAt', 'DESC');
+
+        $payments = $qb->getQuery()->getResult();
+
+        $data = array_map(function($payment) {
+            $user = $payment->getUser();
+            $metadata = $payment->getMetadata() ?? [];
+            return [
+                'id' => $payment->getId(),
+                'amount' => $payment->getAmount(),
+                'currency' => $payment->getCurrency(),
+                'status' => $payment->getStatus(),
+                'description' => $payment->getDescription(),
+                'paymentMethod' => $payment->getPaymentMethod(),
+                'months' => $metadata['months'] ?? 1,
+                'proofImage' => $metadata['proofImage'] ?? null,
+                'phone' => $metadata['phone'] ?? null,
+                'createdAt' => $payment->getCreatedAt()->format('c'),
+                'user' => [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'phone' => $user->getPhone(),
+                    'fullName' => $user->getFullName(),
+                    'accountType' => $user->getAccountType(),
+                    'profilePicture' => $user->getProfilePicture()
+                ]
+            ];
+        }, $payments);
+
+        return $this->json([
+            'requests' => $data,
+            'total' => count($data)
         ]);
     }
 }

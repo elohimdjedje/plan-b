@@ -28,10 +28,13 @@ services:
       - .:/var/www/html
     depends_on:
       - database
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://postgres:root@database:5432/planb?serverVersion=15&charset=utf8
-      APP_ENV: prod
-      APP_DEBUG: 0
+      APP_ENV: dev
+      APP_DEBUG: 1
+      CORS_ALLOW_ORIGIN: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
     networks:
       - planb_network
 

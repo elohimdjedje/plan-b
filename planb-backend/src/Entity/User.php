@@ -230,6 +230,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->firstName . ' ' . $this->lastName;
     }
 
+    /**
+     * Obtenir les initiales du nom complet (pour avatar)
+     */
+    public function getInitials(): string
+    {
+        $firstInitial = $this->firstName ? strtoupper(substr($this->firstName, 0, 1)) : '';
+        $lastInitial = $this->lastName ? strtoupper(substr($this->lastName, 0, 1)) : '';
+        return $firstInitial . $lastInitial;
+    }
+
     public function getAccountType(): string
     {
         return $this->accountType;

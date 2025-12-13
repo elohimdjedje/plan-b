@@ -249,9 +249,14 @@ export default function Map() {
 
   // Charger toutes les annonces
   const loadAllListings = async () => {
-    setLoading(true);
+    // Ne montrer le loading que si on n'a pas de données
+    if (allListings.length === 0) {
+      setLoading(true);
+    }
     try {
+      // Utiliser le cache automatique via listingsAPI
       const response = await listingsAPI.getListings({ country: 'CI' });
+      
       const data = response.data || [];
       
       // Coordonnées par défaut (centre de la Côte d'Ivoire) pour les villes inconnues
@@ -296,6 +301,12 @@ export default function Map() {
       console.log(`✅ ${geocodedListings.length} annonces valides chargées sur la carte`);
     } catch (error) {
       console.error('❌ Erreur chargement annonces:', error);
+      
+      // Afficher un message d'erreur à l'utilisateur
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        console.warn('⏱️ Timeout - Le serveur met trop de temps à répondre');
+      }
+      
       // En cas d'erreur, initialiser avec un tableau vide
       setAllListings([]);
       setListings([]);
