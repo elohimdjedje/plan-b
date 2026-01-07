@@ -38,22 +38,23 @@ const SILENT_ROUTES = [
   '/auth/login',
   '/auth/register',
   '/notifications/count',
+  '/notifications/unread-count',
 ];
 
 // Vérifier si une route est publique selon la méthode HTTP
 const isPublicRoute = (url, method = 'GET') => {
   if (!url) return false;
-  
+
   // Routes toujours publiques
   if (PUBLIC_ROUTES.some(route => url.includes(route))) {
     return true;
   }
-  
+
   // Routes publiques uniquement en GET
   if (method.toUpperCase() === 'GET') {
     return PUBLIC_GET_ROUTES.some(route => url.includes(route));
   }
-  
+
   return false;
 };
 
@@ -72,14 +73,14 @@ let isCleaningUp = false;
 const cleanupAuth = () => {
   if (isCleaningUp) return;
   isCleaningUp = true;
-  
+
   console.warn('[AXIOS] cleanupAuth() appelé - suppression du token!');
   console.trace('[AXIOS] Stack trace du cleanup:');
-  
+
   // Nettoyer localStorage
   localStorage.removeItem('token');
   localStorage.removeItem('planb-auth-storage');
-  
+
   // Nettoyer le store Zustand
   if (window.useAuthStore) {
     try {
@@ -88,7 +89,7 @@ const cleanupAuth = () => {
       // Ignorer les erreurs
     }
   }
-  
+
   // Reset après délai
   setTimeout(() => {
     isCleaningUp = false;
@@ -103,12 +104,38 @@ api.interceptors.request.use(
   (config) => {
     // Ajouter le token seulement si présent
     const token = localStorage.getItem('token');
-    
+
+    const method = config.method?.toUpperCase() || 'GET';
+    const url = config.url || '';
+    const publicRoute = isPublicRoute(url, method);
+
     // Debug logging pour diagnostiquer les problèmes d'auth
-    console.log('[AXIOS] Request:', config.method?.toUpperCase(), config.url);
+    console.log('[AXIOS] Request:', method, url, '| isPublicRoute =', publicRoute);
     console.log('[AXIOS] Token présent:', !!token, token ? token.substring(0, 20) + '...' : 'null');
-    
-    if (token) {
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/7e237e43-f19e-4769-9a08-acb76e6156a8', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'pre-fix',
+        hypothesisId: 'H1',
+        location: 'src/api/axios.js:request',
+        message: 'Axios request interceptor',
+        data: {
+          method,
+          url,
+          hasToken: !!token,
+          isPublicRoute: publicRoute
+        },
+        timestamp: Date.now()
+      })
+    }).catch(() => { });
+    // #endregion agent log
+
+    // Pour les routes publiques, NE PAS envoyer de token (hypothèse H1)
+    if (token && !publicRoute) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -126,27 +153,53 @@ api.interceptors.response.use(
     isCleaningUp = false;
     return response;
   },
-  
+
   // Erreur
   async (error) => {
+    const config = error.config || {};
+    const url = config?.url || '';
+    const method = (config?.method || 'GET').toUpperCase();
+    const isRetry = config?._retry;
+
     // Pas de réponse = erreur réseau
     if (!error.response) {
-      if (error.code === 'ECONNABORTED') {
-        toast.error('Connexion lente. Réessayez.');
+      // Limiter les toasts de timeout et respecter les routes silencieuses
+      if (error.code === 'ECONNABORTED' && !isSilentRoute(url)) {
+        toast.error('Connexion lente. Réessayez.', { id: 'slow-connection' });
       }
       return Promise.reject(error);
     }
 
-    const { status, config } = error.response;
-    const url = config?.url || '';
-    const method = config?.method || 'GET';
-    const isRetry = config?._retry;
+    // Code HTTP de la réponse
+    const { status } = error.response;
 
     // ========== GESTION 401 ==========
     if (status === 401) {
+      const hasToken = !!localStorage.getItem('token');
       console.error('[AXIOS] 401 reçu pour:', url, '| method:', method);
-      console.log('[AXIOS] Token actuel:', localStorage.getItem('token') ? 'présent' : 'absent');
-      
+      console.log('[AXIOS] Token actuel:', hasToken ? 'présent' : 'absent');
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/7e237e43-f19e-4769-9a08-acb76e6156a8', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'debug-session',
+          runId: 'pre-fix',
+          hypothesisId: 'H2',
+          location: 'src/api/axios.js:response',
+          message: 'Axios 401 response',
+          data: {
+            url,
+            method,
+            hasToken,
+            isPublicRoute: isPublicRoute(url, method),
+          },
+          timestamp: Date.now()
+        })
+      }).catch(() => { });
+      // #endregion agent log
+
       // NE JAMAIS supprimer le token automatiquement
       // L'utilisateur doit se déconnecter manuellement ou le token expire naturellement
       // Afficher juste un message si ce n'est pas une route silencieuse
@@ -154,7 +207,7 @@ api.interceptors.response.use(
         toast.error('Session expirée. Veuillez vous reconnecter.', { id: 'session-expired' });
       }
     }
-    
+
     // ========== AUTRES ERREURS ==========
     else if (!isSilentRoute(url)) {
       switch (status) {

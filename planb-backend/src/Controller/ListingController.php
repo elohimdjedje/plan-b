@@ -30,6 +30,28 @@ class ListingController extends AbstractController
     ) {
     }
 
+    /**
+     * Debug helper pour le mode agent
+     */
+    private function debugLog(string $hypothesisId, string $location, string $message, array $data = []): void
+    {
+        try {
+            $logPath = 'c:\\Users\\Elohim Mickael\\Documents\\plan-b\\.cursor\\debug.log';
+            $entry = [
+                'sessionId' => 'debug-session',
+                'runId' => 'pre-fix-backend',
+                'hypothesisId' => $hypothesisId,
+                'location' => $location,
+                'message' => $message,
+                'data' => $data,
+                'timestamp' => (int) (microtime(true) * 1000),
+            ];
+            @file_put_contents($logPath, json_encode($entry, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND | LOCK_EX);
+        } catch (\Throwable $e) {
+            // Ne jamais casser la prod pour les logs
+        }
+    }
+
     #[Route('', name: 'listings_list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
@@ -75,6 +97,18 @@ class ListingController extends AbstractController
             $filters['priceMax'] = (float) $request->query->get('maxPrice');
         }
 
+        // Log debug pour la liste des annonces (H5)
+        $this->debugLog(
+            'H5',
+            'ListingController::list',
+            'Liste des annonces',
+            [
+                'limit' => $limit,
+                'lastId' => $lastId,
+                'filters' => $filters,
+            ]
+        );
+
         // Si des filtres sont présents, utiliser searchListings, sinon findActiveListings
         if (count($filters) > 0) {
             $listings = $this->listingRepository->searchListings($filters, $limit);
@@ -93,7 +127,17 @@ class ListingController extends AbstractController
     public function getProListings(Request $request): JsonResponse
     {
         $limit = min((int) $request->query->get('limit', 10), 20);
-        
+
+        // Log debug pour les annonces PRO (H6)
+        $this->debugLog(
+            'H6',
+            'ListingController::getProListings',
+            'Annonces PRO',
+            [
+                'limit' => $limit,
+            ]
+        );
+
         // Récupérer les annonces des vendeurs PRO
         $proListings = $this->listingRepository->findProListings($limit);
         
@@ -112,7 +156,18 @@ class ListingController extends AbstractController
     {
         $limit = min((int) $request->query->get('limit', 20), 50);
         $category = $request->query->get('category');
-        
+
+        // Log debug pour les annonces récentes (H7)
+        $this->debugLog(
+            'H7',
+            'ListingController::getRecentListings',
+            'Annonces récentes',
+            [
+                'limit' => $limit,
+                'category' => $category,
+            ]
+        );
+
         // Récupérer les annonces récentes (moins d'une semaine)
         $recentListings = $this->listingRepository->findRecentListings($limit);
         

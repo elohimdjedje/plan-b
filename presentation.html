@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan B - Plateforme de Petites Annonces | Afrique de l'Ouest</title>
+    <meta name="description" content="Plan B - La plateforme moderne de petites annonces pour l'Afrique de l'Ouest. Achetez, vendez et louez en toute simplicité avec paiement mobile Wave et Orange Money.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #1E293B;
+            --accent: #F97316;
+            --background: #0F172A;
+            --surface: #1E293B;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --gradient-1: linear-gradient(135deg, #FF6B35 0%, #F97316 50%, #FBBF24 100%);
+            --gradient-2: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 80%, rgba(255, 107, 53, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(249, 115, 22, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, rgba(251, 191, 36, 0.08) 0%, transparent 40%);
+            animation: bgMove 20s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(5deg); }
+            66% { transform: translate(-20px, 20px) rotate(-5deg); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-cta {
+            background: var(--gradient-1);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-text h1 span {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-text p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 40px rgba(255, 107, 53, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--glass);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .hero-mockup {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .phone-frame {
+            background: var(--surface);
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-screen {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 30px;
+            aspect-ratio: 9/19;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .phone-header {
+            background: var(--gradient-1);
+            padding: 3rem 1.5rem 1.5rem;
+            text-align: center;
+        }
+
+        .phone-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .phone-header p {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .phone-content {
+            padding: 1rem;
+        }
+
+        .listing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            gap: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .listing-img {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            opacity: 0.8;
+        }
+
+        .listing-info h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .listing-info p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .listing-price {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .floating-badge {
+            position: absolute;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .floating-badge.badge-1 {
+            top: 10%;
+            right: -20%;
+            animation-delay: 0s;
+        }
+
+        .floating-badge.badge-2 {
+            bottom: 20%;
+            left: -15%;
+            animation-delay: 1.5s;
+        }
+
+        .badge-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .badge-text h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .badge-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 4rem 2rem;
+            background: var(--glass);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.125rem;
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.1);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Categories Section */
+        .categories {
+            padding: 6rem 2rem;
+            background: var(--glass);
+        }
+
+        .categories-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .category-card {
+            background: var(--surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-card h4 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .category-card p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Tech Stack */
+        .tech {
+            padding: 6rem 2rem;
+        }
+
+        .tech-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        .tech-item {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .tech-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .tech-item img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .tech-item span {
+            font-weight: 600;
+        }
+
+        /* Developer Section */
+        .developer {
+            padding: 6rem 2rem;
+            background: var(--glass);
+        }
+
+        .developer-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .developer-photo {
+            position: relative;
+        }
+
+        .photo-frame {
+            width: 280px;
+            height: 280px;
+            background: var(--gradient-1);
+            border-radius: 30px;
+            padding: 4px;
+            position: relative;
+        }
+
+        .photo-inner {
+            width: 100%;
+            height: 100%;
+            background: var(--surface);
+            border-radius: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            overflow: hidden;
+        }
+
+        .developer-info h3 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .developer-info .title {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .developer-info .school {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .developer-info .bio {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .contact-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--surface);
+            border: 1px solid var(--glass-border);
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .contact-link:hover {
+            border-color: var(--primary);
+            background: rgba(255, 107, 53, 0.1);
+        }
+
+        .contact-link svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 8rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .launch-date {
+            display: inline-block;
+            background: var(--gradient-1);
+            padding: 1rem 2rem;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--glass-border);
+            padding: 3rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text p {
+                margin: 0 auto 2rem;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                order: -1;
+            }
+
+            .hero-mockup {
+                max-width: 350px;
+            }
+
+            .floating-badge {
+                display: none;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .developer-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .developer-photo {
+                display: flex;
+                justify-content: center;
+            }
+
+            .contact-links {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">Plan <span>B</span></span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Fonctionnalités</a></li>
+                <li><a href="#categories">Catégories</a></li>
+                <li><a href="#tech">Technologies</a></li>
+                <li><a href="#developer">Développeur</a></li>
+            </ul>
+            <a href="#contact" class="nav-cta">Lancement Bientôt</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>La marketplace <span>nouvelle génération</span> pour l'Afrique de l'Ouest</h1>
+                <p>Achetez, vendez et louez en toute simplicité. Paiement mobile intégré avec Wave et Orange Money. Une expérience moderne inspirée du meilleur.</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        Découvrir
+                    </a>
+                    <a href="#features" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                        Voir les fonctionnalités
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="phone-frame">
+                        <div class="phone-screen">
+                            <div class="phone-header">
+                                <h3>Plan B</h3>
+                                <p>Trouvez ce que vous cherchez</p>
+                            </div>
+                            <div class="phone-content">
+                                <div class="listing-card">
+                                    <div class="listing-img"></div>
+                                    <div class="listing-info">
+                                        <h4>iPhone 14 Pro Max</h4>
+                                        <p>Abidjan, Cocody</p>
+                                        <div class="listing-price">450 000 FCFA</div>
+                                    </div>
+                                </div>
+                                <div class="listing-card">
+                                    <div class="listing-img"></div>
+                                    <div class="listing-info">
+                                        <h4>Appartement F3 meublé</h4>
+                                        <p>Dakar, Plateau</p>
+                                        <div class="listing-price">250 000 FCFA/mois</div>
+                                    </div>
+                                </div>
+                                <div class="listing-card">
+                                    <div class="listing-img"></div>
+                                    <div class="listing-info">
+                                        <h4>Toyota Corolla 2020</h4>
+                                        <p>Cotonou, Akpakpa</p>
+                                        <div class="listing-price">8 500 000 FCFA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="floating-badge badge-1">
+                        <div class="badge-icon">💳</div>
+                        <div class="badge-text">
+                            <h4>Wave & Orange Money</h4>
+                            <p>Paiement mobile intégré</p>
+                        </div>
+                    </div>
+                    <div class="floating-badge badge-2">
+                        <div class="badge-icon">🔒</div>
+                        <div class="badge-text">
+                            <h4>100% Sécurisé</h4>
+                            <p>Transactions protégées</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number">24+</div>
+                <div class="stat-label">Entités Backend</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">30+</div>
+                <div class="stat-label">Pages Frontend</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">62+</div>
+                <div class="stat-label">Composants React</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">85%</div>
+                <div class="stat-label">Prêt Production</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <span class="section-tag">Fonctionnalités</span>
+            <h2>Tout ce dont vous avez besoin</h2>
+            <p>Une plateforme complète pensée pour l'Afrique de l'Ouest avec des fonctionnalités modernes et intuitives.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>Authentification Sécurisée</h3>
+                <p>Connexion JWT avec validation OTP par SMS. Vos données sont protégées avec les derniers standards de sécurité.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Design Mobile-First</h3>
+                <p>Interface responsive optimisée pour smartphone. Publiez et consultez vos annonces où que vous soyez.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💳</div>
+                <h3>Paiement Mobile</h3>
+                <p>Intégration Wave et Orange Money pour des transactions rapides et sécurisées sans carte bancaire.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>Messagerie Intégrée</h3>
+                <p>Discutez directement avec les vendeurs via notre système de messagerie ou WhatsApp.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗺️</div>
+                <h3>Carte Interactive</h3>
+                <p>Visualisez les annonces sur une carte avec Leaflet. Trouvez les offres près de chez vous.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⭐</div>
+                <h3>Système d'Avis</h3>
+                <p>Consultez et laissez des avis sur les vendeurs pour une communauté de confiance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Statistiques Détaillées</h3>
+                <p>Suivez les performances de vos annonces : vues, favoris, messages reçus.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3>Notifications</h3>
+                <p>Restez informé des nouveaux messages, favoris et mises à jour de vos annonces.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏷️</div>
+                <h3>Abonnements PRO</h3>
+                <p>Boostez vos annonces avec des options premium : plus de photos, mise en avant, statistiques avancées.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories" id="categories">
+        <div class="section-header">
+            <span class="section-tag">Catégories</span>
+            <h2>Trouvez tout ce que vous cherchez</h2>
+            <p>Des milliers d'annonces dans toutes les catégories pour répondre à tous vos besoins.</p>
+        </div>
+        <div class="categories-grid">
+            <div class="category-card">
+                <div class="category-icon">🏠</div>
+                <h4>Immobilier</h4>
+                <p>Maisons, appartements, terrains</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">🚗</div>
+                <h4>Véhicules</h4>
+                <p>Voitures, motos, camions</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">📱</div>
+                <h4>Électronique</h4>
+                <p>Téléphones, ordinateurs, TV</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">👔</div>
+                <h4>Mode</h4>
+                <p>Vêtements, chaussures, accessoires</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">🏖️</div>
+                <h4>Vacances</h4>
+                <p>Villas, appartements meublés</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">💼</div>
+                <h4>Emploi</h4>
+                <p>Offres d'emploi, services</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">🛋️</div>
+                <h4>Maison</h4>
+                <p>Meubles, électroménager</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">🎮</div>
+                <h4>Loisirs</h4>
+                <p>Sports, jeux, musique</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section class="tech" id="tech">
+        <div class="section-header">
+            <span class="section-tag">Technologies</span>
+            <h2>Stack Technique Moderne</h2>
+            <p>Construit avec les meilleures technologies pour performance et scalabilité.</p>
+        </div>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#61DAFB"><path d="M16 13.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm0-2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/><path d="M16 8c5.5 0 10.3 1.3 13.2 3.3 1.5 1 2.5 2.2 2.8 3.4.3 1.2 0 2.5-1 3.8-2 2.5-6.2 4.5-11.5 5.3-5.3.8-10.5 0-13.8-2-1.7-1-2.8-2.3-3.2-3.7-.4-1.4 0-2.9 1.2-4.4C5.5 11 10 8.8 15 8h1zm0-2c-5.5 0-11 2.3-14 5.5-1.5 1.8-2.2 3.8-1.7 5.8.5 2 2 3.7 4 5 4 2.4 9.8 3.2 15.5 2.3 5.7-.9 10.5-3.2 13-6.2 1.3-1.5 1.8-3.3 1.3-5-.5-1.7-1.8-3.3-3.8-4.6C27 6.5 21.8 6 16 6z"/></svg>
+                <span>React 19</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#000"><circle cx="16" cy="16" r="14" fill="#000"/><path d="M16 6a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" fill="#fff"/></svg>
+                <span>Symfony 7</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#336791"><path d="M16 4C9.4 4 4 9.4 4 16s5.4 12 12 12 12-5.4 12-12S22.6 4 16 4zm0 22c-5.5 0-10-4.5-10-10S10.5 6 16 6s10 4.5 10 10-4.5 10-10 10z"/></svg>
+                <span>PostgreSQL</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#06B6D4"><path d="M16 6L4 12l12 6 12-6-12-6zM4 18l12 6 12-6"/></svg>
+                <span>TailwindCSS</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#646CFF"><path d="M16 4L4 8v16l12 4 12-4V8L16 4z"/></svg>
+                <span>Vite</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#777BB4"><path d="M16 6c-5.5 0-10 2.2-10 5v10c0 2.8 4.5 5 10 5s10-2.2 10-5V11c0-2.8-4.5-5-10-5z"/></svg>
+                <span>PHP 8.2</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#F7DF1E"><rect width="32" height="32" rx="4" fill="#F7DF1E"/><path d="M8 24l2-1.2c.4.7.8 1.2 1.6 1.2.8 0 1.4-.3 1.4-1.6v-8.4h2.4v8.5c0 2.6-1.5 3.8-3.7 3.8-2 0-3.2-1-3.7-2.3z" fill="#000"/></svg>
+                <span>JavaScript</span>
+            </div>
+            <div class="tech-item">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="#000"><path d="M16 4L4 8v16l12 4 12-4V8L16 4z" fill="#FF6B35"/></svg>
+                <span>JWT Auth</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Developer Section -->
+    <section class="developer" id="developer">
+        <div class="developer-container">
+            <div class="developer-photo">
+                <div class="photo-frame">
+                    <div class="photo-inner">👨‍💻</div>
+                </div>
+            </div>
+            <div class="developer-info">
+                <h3>Elohim Mickael DJEDJE</h3>
+                <p class="title">Développeur Full Stack</p>
+                <p class="school">Bachelor Développement Web - ECE Paris<br>Grande École d'Ingénierie Numérique</p>
+                <p class="bio">
+                    Passionné par le développement web et les nouvelles technologies, je crée des solutions innovantes 
+                    pour répondre aux besoins spécifiques du marché africain. Plan B est mon projet de fin d'études, 
+                    une plateforme moderne de petites annonces pensée pour l'Afrique de l'Ouest.
+                </p>
+                <div class="contact-links" id="contact">
+                    <a href="tel:+33669177983" class="contact-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        +33 6 69 17 79 83
+                    </a>
+                    <a href="https://wa.me/33669177983" class="contact-link" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        WhatsApp
+                    </a>
+                    <a href="mailto:elohim.djedje@edu.ece.fr" class="contact-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Email
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta-content">
+            <div class="launch-date">🚀 Lancement Très Bientôt !</div>
+            <h2>Prêt à découvrir Plan B ?</h2>
+            <p>Rejoignez la révolution des petites annonces en Afrique de l'Ouest. Une plateforme moderne, sécurisée et adaptée à vos besoins.</p>
+            <div class="hero-buttons" style="justify-content: center;">
+                <a href="https://wa.me/33669177983" class="btn btn-primary" target="_blank">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Me Contacter
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    En savoir plus
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <div class="logo-icon" style="width: 35px; height: 35px; font-size: 1.2rem;">B</div>
+                <span class="logo-text">Plan <span style="color: var(--primary);">B</span></span>
+            </div>
+            <p class="footer-text">© 2024 Plan B - Projet Bachelor ECE Paris. Tous droits réservés.</p>
+            <div class="footer-links">
+                <a href="#features">Fonctionnalités</a>
+                <a href="#developer">Contact</a>
+                <a href="https://www.ece.fr" target="_blank">ECE Paris</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Navbar background on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(15, 23, 42, 0.95)';
+            } else {
+                nav.style.background = 'rgba(15, 23, 42, 0.8)';
+            }
+        });
+
+        // Animate elements on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .category-card, .stat-item, .tech-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

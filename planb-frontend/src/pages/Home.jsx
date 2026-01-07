@@ -79,6 +79,37 @@ export default function Home() {
     loadListings();
   }, [activeCategory, activeSubcategory, filters]);
 
+  // Quand une recherche texte est appliquée et que le chargement est terminé,
+  // scroller automatiquement vers la zone des résultats
+  useEffect(() => {
+    // Scroll immédiat dès que le filtre de recherche change, même si chargement en cours
+    if (filters.search && filters.search.trim()) {
+      const scrollToResults = () => {
+        const resultsHeader = document.getElementById('all-listings');
+        const resultsSection = document.querySelector('[data-results]') ||
+          document.querySelector('.grid.grid-cols-2');
+
+        const targetElement = resultsHeader || resultsSection;
+
+        if (targetElement) {
+          const offset = 100;
+          const elementPosition = targetElement.getBoundingClientRect().top + window.scrollY;
+          const offsetPosition = elementPosition - offset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      };
+
+      // Petit délai pour laisser le temps au DOM de se mettre à jour si nécessaire
+      // mais assez court pour sembler instantané
+      const id = setTimeout(scrollToResults, 50);
+      return () => clearTimeout(id);
+    }
+  }, [filters.search]); // Déclenchement sur changement du filtre de recherche uniquement
+
   const loadListings = async () => {
     try {
 
@@ -267,22 +298,6 @@ export default function Home() {
           onSearch={(searchQuery) => {
             // Appliquer le filtre de recherche
             setFilters({ ...filters, search: searchQuery });
-
-            // Scroller vers les résultats
-            setTimeout(() => {
-              const resultsSection = document.querySelector('[data-results]') ||
-                document.querySelector('.grid.grid-cols-2');
-              if (resultsSection) {
-                const offset = 100;
-                const elementPosition = resultsSection.getBoundingClientRect().top + window.scrollY;
-                const offsetPosition = elementPosition - offset;
-
-                window.scrollTo({
-                  top: offsetPosition,
-                  behavior: 'smooth'
-                });
-              }
-            }, 100);
           }}
         />
 
@@ -320,7 +335,7 @@ export default function Home() {
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-secondary-300 to-transparent" />
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
+        <div id="all-listings" className="flex items-center gap-2 mb-3">
           <div className="p-1.5 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg">
             <LayoutGrid size={18} className="text-white" />
           </div>

@@ -1,37 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import AdvancedFiltersModal from './AdvancedFiltersModal';
 import SearchModal from '../search/SearchModal';
 
 /**
  * Barre de filtres avec modal avancé (style Le Bon Coin)
- * Devient sticky à sa position initiale lors du scroll avec transition fluide
+ * Comportement simple type Le Bon Coin :
+ * la barre reste dans le hero, puis se colle en haut de l'écran au scroll.
  */
 export default function FilterBar({ onFilter, currentFilters = {}, activeCategory = 'immobilier', scrollY = 0, onSearch }) {
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const barRef = useRef(null);
-  const [initialTop, setInitialTop] = useState(0);
-
-  // Récupérer la position initiale de la barre au montage
-  useEffect(() => {
-    if (barRef.current) {
-      const rect = barRef.current.getBoundingClientRect();
-      // Position par rapport au document (pas à la fenêtre)
-      setInitialTop(rect.top + window.scrollY);
-    }
-  }, []);
-
-  // La barre devient sticky quand on scroll au-delà de sa position initiale
-  // Utiliser une position fixe calculée
-  const stickyThreshold = Math.max(initialTop - 16, 180); // -16px pour un léger décalage
-  const isSticky = scrollY > stickyThreshold;
-
-  // Calculer la progression du scroll pour les transitions fluides (de 0 à 1)
-  const transitionRange = 100; // pixels sur lesquels la transition s'effectue
-  const scrollProgress = isSticky
-    ? Math.min((scrollY - stickyThreshold) / transitionRange, 1)
-    : 0;
 
   const handleApplyFilters = (advancedFilters) => {
     onFilter({ ...currentFilters, ...advancedFilters });
@@ -58,34 +37,14 @@ export default function FilterBar({ onFilter, currentFilters = {}, activeCategor
     return v && v !== '' && v !== 'all';
   }).length;
 
-  // Styles dynamiques pour une transition progressive
-  const dynamicStyles = isSticky ? {
-    position: 'fixed',
-    top: '16px',
-    left: '16px',
-    right: '16px',
-    maxWidth: `${680 - (scrollProgress * 80)}px`, // Réduction progressive de la largeur
-    margin: '0 auto',
-    transform: `scale(${1 - (scrollProgress * 0.03)})`, // Légère réduction de taille
-    boxShadow: `0 ${4 + scrollProgress * 8}px ${12 + scrollProgress * 12}px rgba(0, 0, 0, ${0.08 + scrollProgress * 0.07})`,
-  } : {};
-
   return (
     <>
-      {/* Espace réservé quand la barre est fixe (évite le saut de contenu) */}
-      {isSticky && <div className="h-[72px] mb-4 mt-4" />}
-
       <div
-        ref={barRef}
         className={`
-          z-40 p-3 border rounded-2xl
-          transition-all duration-500 ease-out
-          ${isSticky
-            ? 'bg-white/95 backdrop-blur-xl border-blue-200/50'
-            : 'relative mb-4 mt-4 bg-white/40 backdrop-blur-md border-sky-200/30 shadow-sm'
-          }
+          sticky top-4 z-40 p-3 border rounded-2xl
+          bg-white/95 backdrop-blur-xl border-blue-200/50 shadow-md
+          mb-4 mt-4
         `}
-        style={dynamicStyles}
       >
         {/* Barre de recherche avec logo */}
         <div className="flex gap-2">

@@ -3,7 +3,7 @@
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Configuration du Pare-feu" -ForegroundColor Cyan
-Write-Host "  Plan B Mobile" -ForegroundColor Cyan
+Write-Host "  Plan B Mobile (Mise à jour)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -20,76 +20,47 @@ if (-not $isAdmin) {
     exit 1
 }
 
-Write-Host "[*] Configuration des règles de pare-feu..." -ForegroundColor Yellow
+Write-Host "[*] Mise à jour des règles de pare-feu..." -ForegroundColor Yellow
+Write-Host "    Note : Application aux profils Public, Privé et Domaine" -ForegroundColor Gray
 Write-Host ""
 
-# Port 8000 - Backend API
-try {
-    $rule = Get-NetFirewallRule -DisplayName "Plan B Backend" -ErrorAction SilentlyContinue
-    if ($rule) {
-        Write-Host "[INFO] Règle 'Plan B Backend' existe déjà" -ForegroundColor Gray
-    } else {
-        New-NetFirewallRule -DisplayName "Plan B Backend" `
+function Update-FirewallRule {
+    param (
+        [string]$Name,
+        [int]$Port
+    )
+
+    try {
+        # Supprimer l'ancienne règle si elle existe pour forcer la mise à jour
+        Remove-NetFirewallRule -DisplayName $Name -ErrorAction SilentlyContinue
+        
+        # Créer la nouvelle règle
+        New-NetFirewallRule -DisplayName $Name `
             -Direction Inbound `
-            -LocalPort 8000 `
+            -LocalPort $Port `
             -Protocol TCP `
             -Action Allow `
-            -Profile Domain,Private `
+            -Profile Domain, Private, Public `
             -ErrorAction Stop | Out-Null
-        Write-Host "[OK] Port 8000 (Backend) autorisé" -ForegroundColor Green
+            
+        Write-Host "[OK] Port $Port ($Name) autorisé" -ForegroundColor Green
     }
-} catch {
-    Write-Host "[ERREUR] Impossible d'autoriser le port 8000" -ForegroundColor Red
+    catch {
+        Write-Host "[ERREUR] Échec pour le port $Port : $($_.Exception.Message)" -ForegroundColor Red
+    }
 }
 
-# Port 19000 - Expo Dev Server
-try {
-    $rule = Get-NetFirewallRule -DisplayName "Expo Dev Server" -ErrorAction SilentlyContinue
-    if ($rule) {
-        Write-Host "[INFO] Règle 'Expo Dev Server' existe déjà" -ForegroundColor Gray
-    } else {
-        New-NetFirewallRule -DisplayName "Expo Dev Server" `
-            -Direction Inbound `
-            -LocalPort 19000 `
-            -Protocol TCP `
-            -Action Allow `
-            -Profile Domain,Private `
-            -ErrorAction Stop | Out-Null
-        Write-Host "[OK] Port 19000 (Expo) autorisé" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "[ERREUR] Impossible d'autoriser le port 19000" -ForegroundColor Red
-}
-
-# Port 19001 - Expo Dev Server (Metro Bundler)
-try {
-    $rule = Get-NetFirewallRule -DisplayName "Expo Metro Bundler" -ErrorAction SilentlyContinue
-    if ($rule) {
-        Write-Host "[INFO] Règle 'Expo Metro Bundler' existe déjà" -ForegroundColor Gray
-    } else {
-        New-NetFirewallRule -DisplayName "Expo Metro Bundler" `
-            -Direction Inbound `
-            -LocalPort 19001 `
-            -Protocol TCP `
-            -Action Allow `
-            -Profile Domain,Private `
-            -ErrorAction Stop | Out-Null
-        Write-Host "[OK] Port 19001 (Metro Bundler) autorisé" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "[ERREUR] Impossible d'autoriser le port 19001" -ForegroundColor Red
-}
+# Appliquer les règles
+Update-FirewallRule "Plan B Backend" 8000
+Update-FirewallRule "Plan B Frontend" 5173
+Update-FirewallRule "Expo Dev Server" 19000
+Update-FirewallRule "Expo Metro Bundler" 19001
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  Configuration terminée !" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Ports autorisés :" -ForegroundColor White
-Write-Host "  - 8000  : Backend API" -ForegroundColor Gray
-Write-Host "  - 19000 : Expo Dev Server" -ForegroundColor Gray
-Write-Host "  - 19001 : Metro Bundler" -ForegroundColor Gray
-Write-Host ""
-Write-Host "Vous pouvez maintenant lancer l'application :" -ForegroundColor Cyan
-Write-Host "  npm start" -ForegroundColor Gray
+Write-Host "Vos ports sont maintenant ouverts sur tous les réseaux." -ForegroundColor Cyan
+Write-Host "Veuillez relancer l'application mobile." -ForegroundColor Yellow
 Write-Host ""

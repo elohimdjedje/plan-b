@@ -28,6 +28,12 @@ const useNotificationStore = create((set, get) => ({
     // Récupère le compteur de non lues
     fetchUnreadCount: async () => {
         try {
+            // Si l'utilisateur n'est pas connecté, ne pas appeler l'API
+            const token = localStorage.getItem('token');
+            if (!token) {
+                return;
+            }
+
             const response = await axios.get('/api/notifications/unread-count');
 
             if (response.data.success) {

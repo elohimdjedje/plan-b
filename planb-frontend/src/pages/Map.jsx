@@ -207,7 +207,6 @@ export default function Map() {
     'Tehini': [9.5167, -3.6167],
     
     // REGION GBEKE (ajout)
-    'Tiassale': [5.8981, -4.8236],
     'Beoumi': [7.6742, -5.5811]
   };
 

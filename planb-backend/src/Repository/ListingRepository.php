@@ -106,8 +106,35 @@ class ListingRepository extends ServiceEntityRepository
 
         // Recherche par mot-clé dans le titre et la description
         if (isset($filters['search']) && !empty($filters['search'])) {
-            $qb->andWhere('l.title LIKE :search OR l.description LIKE :search')
-                ->setParameter('search', '%' . $filters['search'] . '%');
+            $search = trim($filters['search']);
+
+            // Normaliser pour la recherche (minuscules)
+            $normalized = mb_strtolower($search, 'UTF-8');
+
+            // Comprendre quelques intentions simples en français
+            // Ex: "moto loué", "moto à louer" => type=location, catégorie=vehicule
+            if (str_contains($normalized, 'moto')) {
+                $filters['category'] = $filters['category'] ?? 'vehicule';
+            }
+            if (
+                str_contains($normalized, 'louer') ||
+                str_contains($normalized, 'loué') ||
+                str_contains($normalized, 'location')
+            ) {
+                $filters['type'] = $filters['type'] ?? 'location';
+            }
+
+            // Découper en mots-clés pour que "moto loué" trouve aussi "moto à louer"
+            $keywords = preg_split('/\s+/', $search);
+            $keywordIndex = 0;
+            foreach ($keywords as $word) {
+                if (mb_strlen($word) < 2) {
+                    continue;
+                }
+                $paramName = 'kw' . $keywordIndex++;
+                $qb->andWhere("(LOWER(l.title) LIKE :$paramName OR LOWER(l.description) LIKE :$paramName)")
+                   ->setParameter($paramName, '%' . mb_strtolower($word, 'UTF-8') . '%');
+            }
         }
 
         if (isset($filters['category'])) {
