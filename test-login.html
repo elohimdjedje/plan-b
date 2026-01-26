@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login</title>
+</head>
+<body>
+    <h1>Test de connexion</h1>
+    <button onclick="testLogin()">Tester connexion</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Test en cours...\n\n';
+            
+            try {
+                resultDiv.textContent += '1. Envoi de la requête...\n';
+                
+                const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'olitape@gmail.com',
+                        password: 'Oly225'
+                    })
+                });
+                
+                resultDiv.textContent += `2. Réponse reçue: ${response.status} ${response.statusText}\n\n`;
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent += '✅ CONNEXION RÉUSSIE!\n\n';
+                    resultDiv.textContent += `Token: ${data.token ? 'Reçu (' + data.token.substring(0, 20) + '...)' : 'NON REÇU'}\n`;
+                    resultDiv.textContent += `User: ${data.user ? data.user.email : 'NON REÇU'}\n\n`;
+                    resultDiv.textContent += 'Données complètes:\n' + JSON.stringify(data, null, 2);
+                    
+                    // Sauvegarder le token
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        resultDiv.textContent += '\n\n✅ Token sauvegardé dans localStorage!';
+                    }
+                } else {
+                    resultDiv.textContent += '❌ ERREUR DE CONNEXION!\n\n';
+                    resultDiv.textContent += JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.textContent += '❌ ERREUR RÉSEAU!\n\n';
+                resultDiv.textContent += `Message: ${error.message}\n`;
+                resultDiv.textContent += `Stack: ${error.stack}`;
+            }
+        }
+    </script>
+</body>
+</html>

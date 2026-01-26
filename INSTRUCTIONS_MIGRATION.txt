@@ -1,0 +1,50 @@
+========================================
+INSTRUCTIONS POUR APPLIQUER LA MIGRATION
+========================================
+
+METHODE LA PLUS SIMPLE (pgAdmin):
+---------------------------------
+
+1. Ouvrir pgAdmin (depuis le menu Demarrer)
+
+2. Se connecter a votre serveur PostgreSQL
+   - Cliquez sur "Servers" 
+   - Entrez le mot de passe si demande
+
+3. Trouver la base de donnees "planb"
+   - Developpez "Databases"
+   - Cliquez droit sur "planb"
+
+4. Ouvrir Query Tool
+   - Cliquez droit sur "planb" 
+   - Selectionnez "Query Tool"
+
+5. Copier le contenu du fichier MIGRATION_SIMPLE.sql
+   - Ouvrez le fichier MIGRATION_SIMPLE.sql
+   - Selectionnez tout (Ctrl+A)
+   - Copiez (Ctrl+C)
+
+6. Coller dans Query Tool
+   - Collez dans la fenetre Query Tool (Ctrl+V)
+
+7. Executer
+   - Cliquez sur le bouton "Execute" (fleche verte)
+   - OU appuyez sur F5
+
+8. Verifier
+   - Vous devriez voir "Success" en bas
+   - Et une liste de 4 colonnes dans les resultats
+
+C'EST TERMINE !
+
+========================================
+ALTERNATIVE: Si vous avez psql en ligne de commande
+========================================
+
+Ouvrez PowerShell ou CMD dans ce dossier et executez:
+
+psql -U postgres -d planb -f MIGRATION_SIMPLE.sql
+
+(Remplacez "postgres" par votre utilisateur si different)
+
+========================================
