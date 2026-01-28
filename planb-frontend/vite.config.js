@@ -8,6 +8,11 @@ export default defineConfig({
     host: '0.0.0.0', // Écoute sur toutes les interfaces réseau
     port: 5173,
   },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
   // PWA - Service Worker
   publicDir: 'public',
   build: {

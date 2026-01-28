@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\RefreshToken;
 use App\Service\SMSService;
 use App\Service\SecurityLogger;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,8 +19,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Rfc\RFC2104TokenGenerator;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\Cache\ItemInterface;
+use Psr\Cache\CacheItemPoolInterface;
 
 #[Route('/api/v1/auth')]
 class AuthController extends AbstractController
@@ -31,7 +31,7 @@ class AuthController extends AbstractController
         private SMSService $smsService,
         private SecurityLogger $securityLogger,
         private RequestStack $requestStack,
-        private CacheInterface $cache,
+        private CacheItemPoolInterface $cache,
         private JWTTokenManagerInterface $jwtManager
     ) {
     }
@@ -178,10 +178,20 @@ class AuthController extends AbstractController
         // Générer un JWT token avec Lexik
         $token = $this->jwtManager->create($user);
 
+        // Créer un refresh token
+        $refreshToken = new RefreshToken();
+        $refreshToken->setUser($user);
+        $refreshToken->setIpAddress($request->getClientIp());
+        $refreshToken->setUserAgent($request->headers->get('User-Agent'));
+        $this->entityManager->persist($refreshToken);
+        $this->entityManager->flush();
+
         $this->securityLogger->logLogin($user, $request);
 
         return $this->json([
             'token' => $token,
+            'refreshToken' => $refreshToken->getToken(),
+            'expiresIn' => 3600,
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
@@ -350,7 +360,8 @@ class AuthController extends AbstractController
         }
 
         $cacheKey = "otp_{$user->getPhone()}";
-        $storedCode = $this->cache->get($cacheKey, fn() => null);
+        $cacheItem = $this->cache->getItem($cacheKey);
+        $storedCode = $cacheItem->isHit() ? $cacheItem->get() : null;
 
         if (!$storedCode || $storedCode !== $code) {
             return $this->json(['error' => 'Code invalide ou expiré'], Response::HTTP_BAD_REQUEST);
@@ -359,7 +370,7 @@ class AuthController extends AbstractController
         $user->setIsPhoneVerified(true);
         $this->entityManager->flush();
 
-        $this->cache->delete($cacheKey);
+        $this->cache->deleteItem($cacheKey);
 
         return $this->json(['message' => 'Téléphone vérifié avec succès']);
     }
@@ -430,5 +441,173 @@ class AuthController extends AbstractController
                 'message' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    #[Route('/forgot-password', name: 'auth_forgot_password', methods: ['POST'])]
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function forgotPassword(Request $request, RateLimiterFactory $loginLimiter): JsonResponse
+    {
+        $limiter = $loginLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Trop de tentatives. Réessayez dans 10 minutes.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? null;
+
+        if (!$email) {
+            return $this->json(['error' => 'Email requis'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+
+        // Toujours retourner succès pour ne pas révéler si l'email existe
+        if (!$user) {
+            return $this->json(['message' => 'Si cet email existe, un code de réinitialisation a été envoyé']);
+        }
+
+        // Générer un code de réinitialisation (6 chiffres)
+        $resetCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Stocker dans le cache avec expiration de 15 minutes
+        $cacheKey = "password_reset_{$email}";
+        $cacheItem = $this->cache->getItem($cacheKey);
+        $cacheItem->set($resetCode);
+        $cacheItem->expiresAfter(900); // 15 minutes
+        $this->cache->save($cacheItem);
+
+        // En mode dev, afficher le code dans les logs
+        if ($_ENV['APP_ENV'] === 'dev') {
+            error_log("\n========================================");
+            error_log("🔑 PASSWORD RESET CODE FOR {$email}");
+            error_log("🔐 CODE: {$resetCode}");
+            error_log("⏰ Valid for 15 minutes");
+            error_log("========================================\n");
+        }
+
+        // Envoyer par SMS si le user a un téléphone
+        if ($user->getPhone()) {
+            $this->smsService->sendOTP($user->getPhone(), $resetCode);
+        }
+
+        return $this->json([
+            'message' => 'Si cet email existe, un code de réinitialisation a été envoyé',
+            'expiresIn' => 900
+        ]);
+    }
+
+    #[Route('/reset-password', name: 'auth_reset_password', methods: ['POST'])]
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function resetPassword(Request $request, RateLimiterFactory $loginLimiter): JsonResponse
+    {
+        $limiter = $loginLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return $this->json(['error' => 'Trop de tentatives. Réessayez dans 10 minutes.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? null;
+        $code = $data['code'] ?? null;
+        $newPassword = $data['password'] ?? $data['newPassword'] ?? null;
+
+        if (!$email || !$code || !$newPassword) {
+            return $this->json(['error' => 'Email, code et nouveau mot de passe requis'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (strlen($newPassword) < 6) {
+            return $this->json(['error' => 'Le mot de passe doit contenir au moins 6 caractères'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Vérifier le code
+        $cacheKey = "password_reset_{$email}";
+        $cacheItem = $this->cache->getItem($cacheKey);
+        $storedCode = $cacheItem->isHit() ? $cacheItem->get() : null;
+
+        if (!$storedCode || $storedCode !== $code) {
+            return $this->json(['error' => 'Code invalide ou expiré'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Mettre à jour le mot de passe
+        $hashedPassword = $this->passwordHasher->hashPassword($user, $newPassword);
+        $user->setPassword($hashedPassword);
+        $this->entityManager->flush();
+
+        // Supprimer le code du cache
+        $this->cache->deleteItem($cacheKey);
+
+        // Log de sécurité
+        if ($_ENV['APP_ENV'] === 'dev') {
+            error_log("✅ Password reset successful for: {$email}");
+        }
+
+        return $this->json(['message' => 'Mot de passe réinitialisé avec succès']);
+    }
+
+    #[Route('/refresh-token', name: 'auth_refresh_token', methods: ['POST'])]
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function refreshToken(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $refreshTokenString = $data['refreshToken'] ?? $data['refresh_token'] ?? null;
+
+        if (!$refreshTokenString) {
+            return $this->json(['error' => 'Refresh token requis'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Chercher le refresh token
+        $refreshToken = $this->entityManager->getRepository(RefreshToken::class)
+            ->findOneBy(['token' => $refreshTokenString]);
+
+        if (!$refreshToken) {
+            return $this->json(['error' => 'Refresh token invalide'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Vérifier si expiré
+        if ($refreshToken->isExpired()) {
+            $this->entityManager->remove($refreshToken);
+            $this->entityManager->flush();
+            return $this->json(['error' => 'Refresh token expiré'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $user = $refreshToken->getUser();
+
+        if (!$user) {
+            return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Générer un nouveau JWT
+        $newToken = $this->jwtManager->create($user);
+
+        // Optionnel : Générer un nouveau refresh token (rotation)
+        $newRefreshToken = new RefreshToken();
+        $newRefreshToken->setUser($user);
+        $newRefreshToken->setIpAddress($request->getClientIp());
+        $newRefreshToken->setUserAgent($request->headers->get('User-Agent'));
+
+        // Supprimer l'ancien refresh token
+        $this->entityManager->remove($refreshToken);
+        $this->entityManager->persist($newRefreshToken);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'token' => $newToken,
+            'refreshToken' => $newRefreshToken->getToken(),
+            'expiresIn' => 3600, // 1 heure pour le JWT
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'fullName' => $user->getFullName(),
+                'accountType' => $user->getAccountType(),
+                'isPro' => $user->isPro(),
+            ]
+        ]);
     }
 }

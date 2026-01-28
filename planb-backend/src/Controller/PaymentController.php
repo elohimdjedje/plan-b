@@ -5,6 +5,10 @@ namespace App\Controller;
 use App\Entity\Payment;
 use App\Entity\Subscription;
 use App\Entity\User;
+use App\Service\WaveService;
+use App\Service\OrangeMoneyService;
+use App\Service\MtnMobileMoneyService;
+use App\Service\MoovMoneyService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +20,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class PaymentController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private WaveService $waveService,
+        private OrangeMoneyService $orangeMoneyService,
+        private MtnMobileMoneyService $mtnService,
+        private MoovMoneyService $moovService
     ) {}
 
     /**
@@ -125,7 +133,8 @@ class PaymentController extends AbstractController
     }
 
     /**
-     * Créer un paiement pour abonnement PRO
+     * Créer un paiement pour abonnement PRO avec choix du moyen de paiement
+     * Supporte: wave, orange_money, mtn_money, moov_money, card
      */
     #[Route('/create-subscription', name: 'app_payment_create_subscription', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
@@ -140,30 +149,45 @@ class PaymentController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
         
-        // Durée d'abonnement (30 ou 90 jours)
-        $duration = $data['duration'] ?? 30;
-        if (!in_array($duration, [30, 90])) {
-            return $this->json(['error' => 'Durée invalide (30 ou 90 jours)'], 400);
+        // Nombre de mois d'abonnement (1, 3, 6 ou 12)
+        $months = $data['months'] ?? 1;
+        if (!in_array($months, [1, 3, 6, 12])) {
+            return $this->json(['error' => 'Durée invalide (1, 3, 6 ou 12 mois)'], 400);
         }
 
-        // Calcul du montant
+        // Méthode de paiement
+        $paymentMethod = $data['paymentMethod'] ?? 'wave';
+        $validMethods = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'card'];
+        if (!in_array($paymentMethod, $validMethods)) {
+            return $this->json(['error' => 'Méthode de paiement invalide'], 400);
+        }
+
+        // Numéro de téléphone (requis pour mobile money)
+        $phoneNumber = $data['phoneNumber'] ?? $user->getPhone();
+
+        // Calcul du montant selon la durée
         $amounts = [
-            30 => 5000,  // 5000 XOF pour 1 mois
-            90 => 12000  // 12000 XOF pour 3 mois (économie de 3000 XOF)
+            1 => 5000,    // 5000 XOF pour 1 mois
+            3 => 12000,   // 12000 XOF pour 3 mois (économie 3000)
+            6 => 22000,   // 22000 XOF pour 6 mois (économie 8000)
+            12 => 40000   // 40000 XOF pour 12 mois (économie 20000)
         ];
-        $amount = $amounts[$duration];
+        $amount = $amounts[$months];
+        $durationDays = $months * 30;
 
         // Créer l'enregistrement de paiement
         $payment = new Payment();
         $payment->setUser($user);
         $payment->setAmount($amount);
         $payment->setCurrency('XOF');
-        $payment->setPaymentMethod('mobile_money');
+        $payment->setPaymentMethod($paymentMethod);
         $payment->setStatus('pending');
-        $payment->setDescription("Abonnement PRO {$duration} jours");
+        $payment->setDescription("Abonnement PRO {$months} mois");
         $payment->setMetadata([
-            'duration' => $duration,
-            'type' => 'subscription'
+            'months' => $months,
+            'duration_days' => $durationDays,
+            'type' => 'subscription',
+            'phone' => $phoneNumber
         ]);
         $payment->setCreatedAt(new \DateTimeImmutable());
 
@@ -171,32 +195,39 @@ class PaymentController extends AbstractController
         $this->entityManager->flush();
 
         try {
-            // Créer la transaction Wave
-            $waveResult = $this->waveService->createTransaction(
-                $amount,
-                "Abonnement PRO Plan B - {$duration} jours",
-                [
-                    'firstname' => $user->getFirstName(),
-                    'lastname' => $user->getLastName(),
-                    'email' => $user->getEmail(),
-                    'phone' => $user->getPhone()
-                ]
-            );
+            $result = $this->processPaymentByMethod($payment, $paymentMethod, $phoneNumber, $user);
 
-            // Mettre à jour avec l'ID de transaction Wave
-            $payment->setTransactionId($waveResult['transaction_id']);
+            if (isset($result['error'])) {
+                $payment->setStatus('failed');
+                $payment->setErrorMessage($result['error']);
+                $this->entityManager->flush();
+
+                return $this->json([
+                    'error' => $result['error'],
+                    'details' => $result['details'] ?? null
+                ], 400);
+            }
+
+            // Mettre à jour avec l'ID de transaction
+            if (isset($result['transaction_id'])) {
+                $payment->setTransactionId($result['transaction_id']);
+            }
             $this->entityManager->flush();
 
             return $this->json([
+                'success' => true,
                 'payment' => [
                     'id' => $payment->getId(),
                     'amount' => $amount,
                     'currency' => 'XOF',
-                    'duration' => $duration,
+                    'months' => $months,
                     'status' => 'pending',
-                    'wave_url' => $waveResult['payment_url']
+                    'paymentMethod' => $paymentMethod,
+                    'paymentUrl' => $result['payment_url'] ?? null,
+                    'transactionId' => $result['transaction_id'] ?? null,
+                    'ussdCode' => $result['ussd_code'] ?? null
                 ],
-                'message' => 'Paiement créé. Redirigez l\'utilisateur vers wave_url'
+                'message' => $result['message'] ?? 'Paiement initié'
             ], 201);
 
         } catch (\Exception $e) {
@@ -209,6 +240,267 @@ class PaymentController extends AbstractController
                 'details' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Traiter le paiement selon la méthode choisie
+     */
+    private function processPaymentByMethod(Payment $payment, string $method, ?string $phone, User $user): array
+    {
+        $amount = (float) $payment->getAmount();
+        $orderId = (string) $payment->getId();
+        $description = $payment->getDescription();
+
+        switch ($method) {
+            case 'wave':
+                $result = $this->waveService->createTransaction(
+                    (int) $amount,
+                    $description,
+                    [
+                        'firstname' => $user->getFirstName(),
+                        'lastname' => $user->getLastName(),
+                        'email' => $user->getEmail(),
+                        'phone' => $phone ?? $user->getPhone()
+                    ]
+                );
+                return [
+                    'transaction_id' => $result['transaction_id'] ?? null,
+                    'payment_url' => $result['payment_url'] ?? null,
+                    'message' => 'Vous allez être redirigé vers Wave pour le paiement'
+                ];
+
+            case 'orange_money':
+                $result = $this->orangeMoneyService->generatePaymentLink($amount, $orderId, $phone);
+                if (isset($result['error'])) {
+                    return $result;
+                }
+                return [
+                    'transaction_id' => $result['payment_token'] ?? null,
+                    'payment_url' => $result['payment_url'] ?? null,
+                    'message' => 'Veuillez confirmer le paiement Orange Money sur votre téléphone'
+                ];
+
+            case 'mtn_money':
+                if (!$phone) {
+                    return ['error' => 'Numéro de téléphone requis pour MTN Mobile Money'];
+                }
+                $result = $this->mtnService->requestToPay($amount, $phone, $orderId, $description);
+                if (isset($result['error'])) {
+                    return $result;
+                }
+                return [
+                    'transaction_id' => $result['reference_id'] ?? null,
+                    'message' => 'Demande de paiement MTN envoyée. Veuillez confirmer sur votre téléphone.'
+                ];
+
+            case 'moov_money':
+                if (!$phone) {
+                    return ['error' => 'Numéro de téléphone requis pour Moov Money'];
+                }
+                $result = $this->moovService->requestPayment($amount, $phone, $orderId, $description);
+                if (isset($result['error'])) {
+                    return $result;
+                }
+                return [
+                    'transaction_id' => $result['transaction_id'] ?? null,
+                    'payment_url' => $result['payment_url'] ?? null,
+                    'ussd_code' => $result['ussd_code'] ?? null,
+                    'message' => 'Demande de paiement Moov envoyée. Veuillez confirmer sur votre téléphone.'
+                ];
+
+            case 'card':
+                // Pour la carte bancaire, on utilise un provider comme Stripe ou Fedapay
+                // Pour l'instant, retourner un placeholder
+                return [
+                    'message' => 'Paiement par carte bancaire - Intégration à venir',
+                    'payment_url' => null
+                ];
+
+            default:
+                return ['error' => 'Méthode de paiement non supportée'];
+        }
+    }
+
+    /**
+     * Callback MTN Mobile Money
+     */
+    #[Route('/mtn/callback/{orderId}', name: 'app_payment_mtn_callback', methods: ['POST'])]
+    public function mtnCallback(int $orderId, Request $request): JsonResponse
+    {
+        $payload = $request->getContent();
+        $signature = $request->headers->get('X-Mtn-Signature', '');
+
+        if (!$this->mtnService->verifyWebhook($payload, $signature)) {
+            return $this->json(['error' => 'Signature invalide'], 401);
+        }
+
+        $data = json_decode($payload, true);
+        $payment = $this->entityManager->getRepository(Payment::class)->find($orderId);
+
+        if (!$payment) {
+            return $this->json(['error' => 'Paiement non trouvé'], 404);
+        }
+
+        $status = strtolower($data['status'] ?? 'unknown');
+        
+        if ($status === 'successful') {
+            $payment->setStatus('completed');
+            $payment->setCompletedAt(new \DateTimeImmutable());
+            $this->processSuccessfulPayment($payment);
+        } elseif (in_array($status, ['failed', 'cancelled'])) {
+            $payment->setStatus('failed');
+            $payment->setErrorMessage($data['reason'] ?? 'Paiement refusé');
+        }
+
+        $this->entityManager->flush();
+        return $this->json(['message' => 'Webhook traité'], 200);
+    }
+
+    /**
+     * Callback Moov Money
+     */
+    #[Route('/moov/callback/{orderId}', name: 'app_payment_moov_callback', methods: ['POST'])]
+    public function moovCallback(int $orderId, Request $request): JsonResponse
+    {
+        $payload = $request->getContent();
+        $signature = $request->headers->get('X-Moov-Signature', '');
+
+        if (!$this->moovService->verifyWebhook($payload, $signature)) {
+            return $this->json(['error' => 'Signature invalide'], 401);
+        }
+
+        $data = json_decode($payload, true);
+        $payment = $this->entityManager->getRepository(Payment::class)->find($orderId);
+
+        if (!$payment) {
+            return $this->json(['error' => 'Paiement non trouvé'], 404);
+        }
+
+        $status = strtolower($data['status'] ?? 'unknown');
+        
+        if ($status === 'success') {
+            $payment->setStatus('completed');
+            $payment->setCompletedAt(new \DateTimeImmutable());
+            $this->processSuccessfulPayment($payment);
+        } elseif (in_array($status, ['failed', 'cancelled'])) {
+            $payment->setStatus('failed');
+            $payment->setErrorMessage($data['message'] ?? 'Paiement refusé');
+        }
+
+        $this->entityManager->flush();
+        return $this->json(['message' => 'Webhook traité'], 200);
+    }
+
+    /**
+     * Callback Orange Money
+     */
+    #[Route('/orange-money/callback/{orderId}', name: 'app_payment_orange_callback', methods: ['POST'])]
+    public function orangeMoneyCallback(int $orderId, Request $request): JsonResponse
+    {
+        $payload = $request->getContent();
+        $signature = $request->headers->get('X-Orange-Signature', '');
+
+        if (!$this->orangeMoneyService->verifyWebhook($payload, $signature)) {
+            return $this->json(['error' => 'Signature invalide'], 401);
+        }
+
+        $data = json_decode($payload, true);
+        $payment = $this->entityManager->getRepository(Payment::class)->find($orderId);
+
+        if (!$payment) {
+            return $this->json(['error' => 'Paiement non trouvé'], 404);
+        }
+
+        $status = strtolower($data['status'] ?? 'unknown');
+        
+        if ($status === 'success' || $status === 'completed') {
+            $payment->setStatus('completed');
+            $payment->setCompletedAt(new \DateTimeImmutable());
+            $this->processSuccessfulPayment($payment);
+        } elseif (in_array($status, ['failed', 'cancelled', 'expired'])) {
+            $payment->setStatus('failed');
+            $payment->setErrorMessage($data['message'] ?? 'Paiement refusé');
+        }
+
+        $this->entityManager->flush();
+        return $this->json(['message' => 'Webhook traité'], 200);
+    }
+
+    /**
+     * Traiter un paiement réussi (activer abonnement ou boost)
+     */
+    private function processSuccessfulPayment(Payment $payment): void
+    {
+        $metadata = $payment->getMetadata();
+        $type = $metadata['type'] ?? null;
+
+        if ($type === 'subscription') {
+            $durationDays = $metadata['duration_days'] ?? ($metadata['months'] ?? 1) * 30;
+            $this->activateSubscription($payment->getUser(), $durationDays);
+        } elseif ($type === 'boost') {
+            $listingId = $metadata['listing_id'] ?? null;
+            if ($listingId) {
+                $this->boostListingFeature($listingId);
+            }
+        }
+    }
+
+    /**
+     * Obtenir les méthodes de paiement disponibles
+     */
+    #[Route('/methods', name: 'app_payment_methods', methods: ['GET'])]
+    public function getPaymentMethods(): JsonResponse
+    {
+        return $this->json([
+            'methods' => [
+                [
+                    'id' => 'wave',
+                    'name' => 'Wave',
+                    'description' => 'Paiement mobile Wave',
+                    'countries' => ['SN', 'CI', 'ML', 'BF'],
+                    'requiresPhone' => true,
+                    'enabled' => true
+                ],
+                [
+                    'id' => 'orange_money',
+                    'name' => 'Orange Money',
+                    'description' => 'Paiement mobile Orange',
+                    'countries' => ['SN', 'CI', 'ML', 'BF', 'GN'],
+                    'requiresPhone' => true,
+                    'enabled' => true
+                ],
+                [
+                    'id' => 'mtn_money',
+                    'name' => 'MTN Mobile Money',
+                    'description' => 'Paiement mobile MTN',
+                    'countries' => ['CI', 'GH', 'CM', 'BJ'],
+                    'requiresPhone' => true,
+                    'enabled' => true
+                ],
+                [
+                    'id' => 'moov_money',
+                    'name' => 'Moov Money',
+                    'description' => 'Paiement mobile Moov',
+                    'countries' => ['CI', 'BF', 'BJ', 'TG'],
+                    'requiresPhone' => true,
+                    'enabled' => true
+                ],
+                [
+                    'id' => 'card',
+                    'name' => 'Carte Bancaire',
+                    'description' => 'Visa, Mastercard',
+                    'countries' => ['*'],
+                    'requiresPhone' => false,
+                    'enabled' => true
+                ]
+            ],
+            'subscriptionPrices' => [
+                1 => ['price' => 5000, 'label' => '1 mois'],
+                3 => ['price' => 12000, 'label' => '3 mois', 'savings' => 3000],
+                6 => ['price' => 22000, 'label' => '6 mois', 'savings' => 8000],
+                12 => ['price' => 40000, 'label' => '12 mois', 'savings' => 20000]
+            ]
+        ]);
     }
 
     /**
