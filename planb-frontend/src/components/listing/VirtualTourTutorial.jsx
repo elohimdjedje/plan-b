@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Smartphone, Camera, CheckCircle, ExternalLink, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Smartphone, Camera, CheckCircle, ExternalLink, X, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -86,17 +86,60 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
                             1
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold mb-2">Télécharge l'app</h4>
-                            <ul className="space-y-1 text-sm text-gray-700">
-                              <li className="flex items-center gap-2">
-                                <CheckCircle className="text-green-500" size={16} />
-                                <strong>Google Street View</strong> (gratuit)
-                              </li>
-                              <li className="flex items-center gap-2">
-                                <CheckCircle className="text-green-500" size={16} />
-                                Disponible sur iOS et Android
-                              </li>
-                            </ul>
+                            <h4 className="font-semibold mb-2">Télécharge l'app (Outils gratuits)</h4>
+                            <div className="space-y-3">
+                              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                                <p className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                  <CheckCircle className="text-blue-600" size={18} />
+                                  <strong>Google Street View</strong> ⭐ (Recommandé)
+                                </p>
+                                <ul className="space-y-1 text-sm text-gray-700 ml-6">
+                                  <li>• Gratuit et disponible sur iOS et Android</li>
+                                  <li>• Interface simple et intuitive</li>
+                                  <li>• Qualité professionnelle</li>
+                                  <li>• Export automatique en format équirectangulaire</li>
+                                  <li>• Téléchargement : App Store ou Google Play</li>
+                                </ul>
+                              </div>
+                              
+                              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                <p className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                                  <CheckCircle className="text-green-600" size={18} />
+                                  <strong>Cardboard Camera</strong> (Google)
+                                </p>
+                                <ul className="space-y-1 text-sm text-gray-700 ml-6">
+                                  <li>• Gratuit sur Android et iOS</li>
+                                  <li>• Crée des photos panoramiques simples</li>
+                                  <li>• Export en format standard</li>
+                                  <li>• Idéal pour débuter</li>
+                                </ul>
+                              </div>
+
+                              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                                <p className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                                  <CheckCircle className="text-purple-600" size={18} />
+                                  <strong>360 Panorama</strong> (iOS)
+                                </p>
+                                <ul className="space-y-1 text-sm text-gray-700 ml-6">
+                                  <li>• Gratuit sur App Store</li>
+                                  <li>• Interface simple</li>
+                                  <li>• Export multiple formats</li>
+                                  <li>• Bonne qualité d'image</li>
+                                </ul>
+                              </div>
+
+                              <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                                <p className="font-semibold text-orange-900 mb-2 flex items-center gap-2">
+                                  <CheckCircle className="text-orange-600" size={18} />
+                                  <strong>Photo 360°</strong> (Android)
+                                </p>
+                                <ul className="space-y-1 text-sm text-gray-700 ml-6">
+                                  <li>• Gratuit sur Google Play</li>
+                                  <li>• Création rapide de photos 360°</li>
+                                  <li>• Partage facile</li>
+                                </ul>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -179,7 +222,7 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
                   >
                     <div className="p-4 pt-0 space-y-4 bg-gray-50">
                       <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <h4 className="font-semibold mb-3">Caméras recommandées :</h4>
+                        <h4 className="font-semibold mb-3">Caméras professionnelles (payantes) :</h4>
                         <ul className="space-y-2 text-sm">
                           <li className="flex items-center gap-2">
                             <CheckCircle className="text-green-500" size={16} />
@@ -189,7 +232,14 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
                             <CheckCircle className="text-green-500" size={16} />
                             <strong>Ricoh Theta SC2</strong> (~250€)
                           </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircle className="text-green-500" size={16} />
+                            <strong>Insta360 X3</strong> (~450€)
+                          </li>
                         </ul>
+                        <p className="mt-3 text-xs text-gray-600 italic">
+                          💡 <strong>Astuce :</strong> Pour débuter, utilisez plutôt les apps gratuites sur smartphone (voir méthode facile ci-dessus) !
+                        </p>
                       </div>
 
                       <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -208,6 +258,43 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
               </AnimatePresence>
             </div>
 
+            {/* Outils en ligne gratuits */}
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Globe className="text-indigo-600" size={20} />
+                Outils en ligne gratuits (Alternative)
+              </h3>
+              <p className="text-sm text-gray-700 mb-3">Si vous avez déjà des photos, vous pouvez utiliser :</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="text-indigo-500 mt-0.5" size={16} />
+                  <div>
+                    <strong>Pannellum</strong> - Visualiseur 360° gratuit
+                    <a
+                      href="https://pannellum.org/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-indigo-600 hover:text-indigo-700 text-xs inline-flex items-center gap-1"
+                    >
+                      Tester <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="text-indigo-500 mt-0.5" size={16} />
+                  <div>
+                    <strong>Photo Sphere Viewer</strong> - Bibliothèque open source
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="text-indigo-500 mt-0.5" size={16} />
+                  <div>
+                    <strong>Marzipano</strong> - Créateur de visites virtuelles (Google)
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Vérification */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -218,7 +305,7 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
               <ul className="space-y-1 text-sm text-gray-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="text-green-500" size={16} />
-                  Largeur = 2x la hauteur
+                  Largeur = 2x la hauteur (format équirectangulaire)
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="text-green-500" size={16} />
@@ -228,6 +315,14 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
                   <CheckCircle className="text-green-500" size={16} />
                   Ça ressemble à une carte du monde
                 </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="text-green-500" size={16} />
+                  Format : JPG ou PNG
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="text-green-500" size={16} />
+                  Taille max : 15 MB
+                </li>
               </ul>
               <a
                 href="https://pannellum.org/"
@@ -235,7 +330,7 @@ export default function VirtualTourTutorial({ isOpen, onClose }) {
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
-                Tester en ligne <ExternalLink size={16} />
+                Tester votre image en ligne <ExternalLink size={16} />
               </a>
             </div>
 
