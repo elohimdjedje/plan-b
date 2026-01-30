@@ -1,0 +1,42 @@
+# Environnement virtuel
+venv/
+env/
+ENV/
+
+# Modèles ML
+models/*.pkl
+models/*.h5
+models/*.pt
+models/*.pth
+*.pkl
+*.h5
+*.pt
+*.pth
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environnement
+.env
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/

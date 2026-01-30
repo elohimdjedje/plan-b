@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Repository\ListingRepository;
 use App\Service\IntelligentSearchService;
+use App\Service\AIService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +17,8 @@ class SearchController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private ListingRepository $listingRepository,
-        private IntelligentSearchService $intelligentSearchService
+        private IntelligentSearchService $intelligentSearchService,
+        private ?AIService $aiService = null
     ) {}
 
     /**
@@ -175,6 +177,39 @@ class SearchController extends AbstractController
             ->setMaxResults($limit);
 
         $listings = $qb->getQuery()->getResult();
+
+        // Améliorer les résultats avec la recherche sémantique IA si disponible
+        if ($query && $this->aiService && $this->aiService->isAvailable() && !empty($listings)) {
+            try {
+                // Sérialiser les listings pour l'IA
+                $listingsData = array_map(function($listing) {
+                    return [
+                        'id' => $listing->getId(),
+                        'title' => $listing->getTitle(),
+                        'description' => $listing->getDescription()
+                    ];
+                }, $listings);
+                
+                // Recherche sémantique
+                $semanticResults = $this->aiService->semanticSearch($query, $listingsData, $limit);
+                
+                // Réordonner les listings selon la pertinence sémantique
+                if (!empty($semanticResults)) {
+                    $semanticMap = [];
+                    foreach ($semanticResults as $result) {
+                        $semanticMap[$result['listing_id']] = $result['similarity_score'];
+                    }
+                    
+                    usort($listings, function($a, $b) use ($semanticMap) {
+                        $scoreA = $semanticMap[$a->getId()] ?? 0;
+                        $scoreB = $semanticMap[$b->getId()] ?? 0;
+                        return $scoreB <=> $scoreA;
+                    });
+                }
+            } catch (\Exception $e) {
+                // En cas d'erreur IA, continuer avec les résultats normaux
+            }
+        }
 
         // Compter le total
         $countQb = clone $qb;

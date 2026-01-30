@@ -10,6 +10,7 @@ use App\Repository\ListingViewRepository;
 use App\Repository\ReviewRepository;
 use App\Service\ViewCounterService;
 use App\Service\NotificationManagerService;
+use App\Service\AIService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -28,7 +29,8 @@ class ListingController extends AbstractController
         private ListingViewRepository $listingViewRepository,
         private ViewCounterService $viewCounterService,
         private ReviewRepository $reviewRepository,
-        private NotificationManagerService $notificationManager
+        private NotificationManagerService $notificationManager,
+        private ?AIService $aiService = null
     ) {
     }
 
@@ -203,7 +205,28 @@ class ListingController extends AbstractController
             $this->viewCounterService->recordView($listing, $currentUser instanceof User ? $currentUser : null);
         }
 
-        return $this->json($this->serializeListing($listing, true));
+        $listingData = $this->serializeListing($listing, true);
+        
+        // Ajouter des annonces similaires via IA si disponible
+        if ($this->aiService && $this->aiService->isAvailable() && $currentUser) {
+            try {
+                $similar = $this->aiService->findSimilarListings(
+                    $listing->getId(),
+                    $listing->getTitle(),
+                    $listing->getDescription(),
+                    $listing->getCategory(),
+                    5
+                );
+                
+                if (!empty($similar)) {
+                    $listingData['ai_similar'] = $similar;
+                }
+            } catch (\Exception $e) {
+                // Ignorer les erreurs IA, ne pas bloquer l'affichage
+            }
+        }
+
+        return $this->json($listingData);
     }
 
     #[Route('', name: 'listings_create', methods: ['POST'])]
@@ -231,6 +254,44 @@ class ListingController extends AbstractController
             }
         }
 
+        // ============================================
+        // UTILISATION DE L'IA POUR AMÉLIORER L'ANNONCE
+        // ============================================
+        
+        // 1. Catégorisation automatique si non spécifiée
+        if (empty($data['category']) && $this->aiService && $this->aiService->isAvailable()) {
+            $aiCategory = $this->aiService->categorize(
+                $data['title'] ?? '',
+                $data['description'] ?? ''
+            );
+            
+            if ($aiCategory['confidence'] > 0.5) {
+                $data['category'] = $aiCategory['category'];
+                if ($aiCategory['subcategory']) {
+                    $data['subcategory'] = $aiCategory['subcategory'];
+                }
+            }
+        }
+        
+        // 2. Détection de spam/fraude
+        if ($this->aiService && $this->aiService->isAvailable()) {
+            $spamCheck = $this->aiService->detectSpam(
+                $data['title'] ?? '',
+                $data['description'] ?? '',
+                $data['price'] ?? null,
+                $user->getId()
+            );
+            
+            if ($spamCheck['is_spam'] && $spamCheck['confidence'] > 0.7) {
+                return $this->json([
+                    'error' => 'SPAM_DETECTED',
+                    'message' => 'Votre annonce a été détectée comme suspecte. Veuillez vérifier le contenu.',
+                    'reasons' => $spamCheck['reasons'],
+                    'confidence' => $spamCheck['confidence']
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         // Créer l'annonce
         $listing = new Listing();
         $listing->setUser($user)
@@ -239,7 +300,7 @@ class ListingController extends AbstractController
             ->setPrice($data['price'])
             ->setPriceUnit($data['priceUnit'] ?? 'mois')
             ->setCurrency($data['currency'] ?? 'XOF')
-            ->setCategory($data['category'])
+            ->setCategory($data['category'] ?? 'autre')
             ->setSubcategory($data['subcategory'] ?? null)
             ->setType($data['type'] ?? 'vente')
             ->setCountry($data['country'] ?? 'CI')
