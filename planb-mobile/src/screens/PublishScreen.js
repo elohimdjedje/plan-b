@@ -19,6 +19,7 @@ import { COLORS, SPACING, FONTS, BORDER_RADIUS, CATEGORIES, TRANSACTION_TYPES } 
 import { Button, Input } from '../components/common';
 import { listingsAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
+import { wp, normalize, screenData } from '../utils/responsive';
 
 const PublishScreen = () => {
   const navigation = useNavigation();
@@ -427,11 +428,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     paddingVertical: SPACING.md,
   },
   headerTitle: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: normalize(FONTS.sizes.lg),
     fontWeight: '600',
     color: COLORS.text,
   },
@@ -458,16 +459,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepContent: {
-    padding: SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
   },
   stepTitle: {
-    fontSize: FONTS.sizes.xl,
+    fontSize: normalize(FONTS.sizes.xl),
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: SPACING.lg,
   },
   label: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     fontWeight: '500',
     color: COLORS.text,
     marginTop: SPACING.lg,
@@ -492,7 +493,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     marginTop: SPACING.sm,
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   chipText: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
   },
   chipTextActive: {
@@ -537,7 +538,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   typeButtonText: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
@@ -596,10 +597,10 @@ const styles = StyleSheet.create({
   photosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
+    gap: screenData.isSmallDevice ? SPACING.sm : SPACING.md,
   },
   photoItem: {
-    width: '30%',
+    width: screenData.isSmallDevice ? wp(28) : '30%',
     aspectRatio: 1,
     borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
@@ -627,7 +628,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addPhotoButton: {
-    width: '30%',
+    width: screenData.isSmallDevice ? wp(28) : '30%',
     aspectRatio: 1,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
@@ -643,7 +644,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    padding: SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     gap: SPACING.md,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,

@@ -20,6 +20,7 @@ import { Button, Loading } from '../components/common';
 import { listingsAPI, favoritesAPI, conversationsAPI } from '../services/api';
 import { API_URL } from '../config/api';
 import useAuthStore from '../store/authStore';
+import { wp, normalize, screenData } from '../utils/responsive';
 
 const { width } = Dimensions.get('window');
 
@@ -346,12 +347,12 @@ const styles = StyleSheet.create({
   },
   image: {
     width: width,
-    height: 300,
+    height: screenData.isSmallDevice ? 250 : screenData.isTablet ? 400 : 300,
     backgroundColor: COLORS.borderLight,
   },
   noImage: {
     width: width,
-    height: 300,
+    height: screenData.isSmallDevice ? 250 : screenData.isTablet ? 400 : 300,
     backgroundColor: COLORS.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -397,24 +398,24 @@ const styles = StyleSheet.create({
     ...SHADOWS.md,
   },
   content: {
-    padding: SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   price: {
-    fontSize: FONTS.sizes.xxl,
+    fontSize: normalize(FONTS.sizes.xxl),
     fontWeight: 'bold',
     color: COLORS.primary,
   },
   priceUnit: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: normalize(FONTS.sizes.lg),
     color: COLORS.textSecondary,
     marginLeft: 4,
   },
   title: {
-    fontSize: FONTS.sizes.xl,
+    fontSize: normalize(FONTS.sizes.xl),
     fontWeight: '600',
     color: COLORS.text,
     marginTop: SPACING.sm,
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   location: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.textSecondary,
   },
   badges: {
@@ -445,7 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   badgeText: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
   sectionTitle: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: normalize(FONTS.sizes.lg),
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: SPACING.md,
@@ -471,19 +472,19 @@ const styles = StyleSheet.create({
     minWidth: 70,
   },
   specValue: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: normalize(FONTS.sizes.lg),
     fontWeight: '600',
     color: COLORS.text,
     marginTop: SPACING.xs,
   },
   specLabel: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
   },
   description: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.text,
-    lineHeight: 22,
+    lineHeight: normalize(22),
   },
   sellerCard: {
     flexDirection: 'row',
@@ -518,8 +519,8 @@ const styles = StyleSheet.create({
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
-    paddingBottom: SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.sm : SPACING.md,
+    paddingBottom: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,

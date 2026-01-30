@@ -2,6 +2,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS, BORDER_RADIUS, SPACING, FONTS } from '../../constants/theme';
+import { normalize, screenData } from '../../utils/responsive';
 
 const Button = ({
   title,
@@ -116,13 +117,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   text_sm: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
   },
   text_md: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
   },
   text_lg: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: normalize(FONTS.sizes.lg),
   },
   textPrimary: {
     color: COLORS.textInverse,

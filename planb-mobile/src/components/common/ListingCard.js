@@ -1,9 +1,12 @@
 // Composant ListingCard pour afficher une annonce
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, BORDER_RADIUS, SPACING, FONTS, SHADOWS } from '../../constants/theme';
 import { API_URL } from '../../config/api';
+import { wp, normalize, screenData } from '../../utils/responsive';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ListingCard = ({ listing, onPress, onFavoritePress, isFavorite = false, horizontal = false }) => {
   const formatPrice = (price) => {
@@ -150,12 +153,12 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 180,
+    height: screenData.isSmallDevice ? 160 : screenData.isTablet ? 220 : 180,
     backgroundColor: COLORS.borderLight,
   },
   imageHorizontal: {
-    width: 120,
-    height: 120,
+    width: screenData.isSmallDevice ? 100 : 120,
+    height: screenData.isSmallDevice ? 100 : 120,
     backgroundColor: COLORS.borderLight,
   },
   proBadge: {
@@ -193,13 +196,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: SPACING.xs,
   },
   location: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
@@ -208,12 +211,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   price: {
-    fontSize: FONTS.sizes.lg,
+    fontSize: normalize(FONTS.sizes.lg),
     fontWeight: 'bold',
     color: COLORS.primary,
   },
   priceUnit: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     marginLeft: 2,
   },
@@ -228,7 +231,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   specText: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
   },
   placeholderImage: {

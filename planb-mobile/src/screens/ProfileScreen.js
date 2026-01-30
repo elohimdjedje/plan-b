@@ -16,6 +16,7 @@ import { COLORS, SPACING, FONTS, BORDER_RADIUS, SHADOWS } from '../constants/the
 import { Button, Loading, EmptyState } from '../components/common';
 import { listingsAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
+import { wp, normalize, screenData } from '../utils/responsive';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -233,11 +234,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     paddingVertical: SPACING.md,
   },
   title: {
-    fontSize: FONTS.sizes.xxl,
+    fontSize: normalize(FONTS.sizes.xxl),
     fontWeight: 'bold',
     color: COLORS.text,
   },
@@ -245,8 +246,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    marginHorizontal: SPACING.lg,
-    padding: SPACING.lg,
+    marginHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     ...SHADOWS.sm,
   },
@@ -263,17 +264,17 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.md,
   },
   userName: {
-    fontSize: FONTS.sizes.xl,
+    fontSize: normalize(FONTS.sizes.xl),
     fontWeight: '600',
     color: COLORS.text,
   },
   userEmail: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     marginTop: 2,
   },
   userPhone: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
   },
   proBadge: {
@@ -290,9 +291,9 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     marginTop: SPACING.md,
-    padding: SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     ...SHADOWS.sm,
   },
@@ -301,12 +302,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: FONTS.sizes.xxl,
+    fontSize: normalize(FONTS.sizes.xxl),
     fontWeight: 'bold',
     color: COLORS.primary,
   },
   statLabel: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     marginTop: 2,
   },
@@ -315,12 +316,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
   },
   publishSection: {
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     marginTop: SPACING.lg,
   },
   menuContainer: {
     backgroundColor: COLORS.surface,
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     marginTop: SPACING.lg,
     borderRadius: BORDER_RADIUS.lg,
     ...SHADOWS.sm,
@@ -356,16 +357,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     marginTop: SPACING.xl,
-    padding: SPACING.lg,
+    padding: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.error,
   },
   logoutText: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.error,
     fontWeight: '600',
   },
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
   footerText: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textLight,
   },
 });

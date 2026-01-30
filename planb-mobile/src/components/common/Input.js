@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, BORDER_RADIUS, SPACING, FONTS } from '../../constants/theme';
+import { normalize } from '../../utils/responsive';
 
 const Input = ({
   label,
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   label: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     fontWeight: '500',
     color: COLORS.text,
     marginBottom: SPACING.xs,
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: SPACING.md,
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.text,
   },
   inputMultiline: {
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   error: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.error,
     marginTop: SPACING.xs,
   },

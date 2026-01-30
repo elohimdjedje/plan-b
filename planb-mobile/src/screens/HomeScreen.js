@@ -17,6 +17,7 @@ import { COLORS, SPACING, FONTS, BORDER_RADIUS, CATEGORIES } from '../constants/
 import { ListingCard, Loading, EmptyState } from '../components/common';
 import { listingsAPI, favoritesAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
+import { wp, normalize, screenData } from '../utils/responsive';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     marginTop: SPACING.md,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
@@ -251,18 +252,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.sm,
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.text,
   },
   categoriesContainer: {
     marginTop: SPACING.md,
   },
   categoriesContent: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     gap: SPACING.sm,
   },
   categoryChip: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.surface,
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   categoryChipText: {
-    fontSize: FONTS.sizes.sm,
+    fontSize: normalize(FONTS.sizes.sm),
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
@@ -289,32 +290,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
     marginTop: SPACING.lg,
     marginBottom: SPACING.md,
   },
   sectionTitle: {
-    fontSize: FONTS.sizes.xl,
+    fontSize: normalize(FONTS.sizes.xl),
     fontWeight: 'bold',
     color: COLORS.text,
   },
   seeAll: {
-    fontSize: FONTS.sizes.md,
+    fontSize: normalize(FONTS.sizes.md),
     color: COLORS.primary,
     fontWeight: '500',
   },
   proListings: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
   },
   proCard: {
-    width: 280,
+    width: screenData.isSmallDevice ? wp(75) : screenData.isTablet ? 320 : 280,
     marginRight: SPACING.md,
   },
   listContent: {
     paddingBottom: SPACING.xxl,
   },
   listingItem: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: screenData.isSmallDevice ? SPACING.md : SPACING.lg,
   },
 });
 
