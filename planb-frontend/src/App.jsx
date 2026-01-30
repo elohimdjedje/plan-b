@@ -390,7 +390,7 @@ function ListingCard({ listing }) {
 
                 {/* 360 Badge */}
                 {listing.has360 && (
-                    <div className="absolute top-3 right-14 px-2 py-1 bg-purple-600 text-white text-xs font-medium rounded-lg flex items-center gap-1">
+                    <div className="absolute top-3 right-14 px-2 py-1 bg-orange-500 text-white text-xs font-medium rounded-lg flex items-center gap-1">
                         <Globe className="w-3 h-3" /> 360°
                     </div>
                 )}
@@ -778,7 +778,7 @@ function HomePage() {
             <section className="max-w-7xl mx-auto px-4 -mt-20 relative z-10 mb-16">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <Link to="/category/immobilier" className="group">
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
                             <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-4">
                                 <Home className="w-7 h-7 text-white" />
                             </div>
@@ -790,7 +790,7 @@ function HomePage() {
                         </div>
                     </Link>
                     <Link to="/category/vacance" className="group">
-                        <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
                             <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-4">
                                 <Hotel className="w-7 h-7 text-white" />
                             </div>
@@ -802,7 +802,7 @@ function HomePage() {
                         </div>
                     </Link>
                     <Link to="/category/vehicule" className="group">
-                        <div className="bg-gradient-to-br from-teal-500 to-teal-700 rounded-2xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                        <div className="bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
                             <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-4">
                                 <Car className="w-7 h-7 text-white" />
                             </div>
@@ -1454,19 +1454,21 @@ function ListingDetailPage() {
                     if (data && data.url) {
                         setVirtualTourData(data);
                     } else {
-                        // Si has360 est true mais pas de données API, utiliser une image de démo
+                        // Si has360 est true mais pas de données API, utiliser l'image principale comme fallback
                         setVirtualTourData({
-                            url: 'https://photo-sphere-viewer.js.org/assets/sphere.jpg',
+                            url: listing.image,
                             thumbnail: listing.image
                         });
                     }
                 })
                 .catch(() => {
-                    // Si erreur mais has360 est true, utiliser une image de démo
-                    setVirtualTourData({
-                        url: 'https://photo-sphere-viewer.js.org/assets/sphere.jpg',
-                        thumbnail: listing.image
-                    });
+                    // Si erreur mais has360 est true, utiliser l'image principale comme fallback
+                    if (listing.has360) {
+                        setVirtualTourData({
+                            url: listing.image,
+                            thumbnail: listing.image
+                        });
+                    }
                 });
         } else {
             // Réinitialiser si pas de has360
@@ -1676,9 +1678,9 @@ function ListingDetailPage() {
                                             if (virtualTourData) {
                                                 setShowVirtualTour(true);
                                             } else {
-                                                // Si pas encore chargé, utiliser une image de démo
+                                                // Si pas encore chargé, utiliser l'image principale comme fallback
                                                 setVirtualTourData({
-                                                    url: 'https://photo-sphere-viewer.js.org/assets/sphere.jpg',
+                                                    url: listing.image,
                                                     thumbnail: listing.image
                                                 });
                                                 setShowVirtualTour(true);
@@ -6387,7 +6389,7 @@ function CategoryPage() {
             title: 'Vacances',
             description: 'Hôtels, résidences meublées et locations de vacances',
             icon: Hotel,
-            gradient: 'from-purple-500 to-purple-700',
+            gradient: 'from-amber-500 to-amber-600',
             color: 'purple',
             subcategories: [
                 { id: 'hotel', label: 'Hôtel', icon: Hotel },
@@ -8142,7 +8144,7 @@ function ContactPage() {
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
             {/* Hero */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 py-16">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h1 className="text-4xl font-bold text-white mb-4">Contactez-nous</h1>
                     <p className="text-white/90 text-lg">Notre équipe est là pour vous aider</p>
@@ -8302,7 +8304,7 @@ function TermsPage() {
     return (
         <div className="min-h-screen bg-gray-50 pt-20">
             {/* Hero */}
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 py-16">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Conditions d'utilisation</h1>
                     <p className="text-white/90 text-lg md:text-xl">Dernière mise à jour : Janvier 2026</p>
