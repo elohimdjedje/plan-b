@@ -10,9 +10,16 @@ import {
     Users, BedDouble, KeyRound, CalendarCheck, HandCoins, FileText, CircleDot, Navigation
 } from 'lucide-react';
 import VirtualTourTutorial from './components/listing/VirtualTourTutorial';
+import VirtualTour from './components/listing/VirtualTour';
+import { virtualTourAPI } from './api/virtualTour';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+// Pages de paiement
+import WavePayment from './pages/WavePayment';
+import OrangeMoneyPayment from './pages/OrangeMoneyPayment';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 
 // API simulée pour les données
 // Statuts possibles: 'disponible', 'en_negociation', 'reserve', 'vendu'
@@ -524,7 +531,7 @@ function HomePage() {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Hero Section */}
-            <section className="relative pt-28 pb-40 overflow-hidden">
+            <section className="relative pt-20 md:pt-28 pb-20 md:pb-32 overflow-hidden">
                 {/* Background Slideshow */}
                 <div className="absolute inset-0">
                     {bgImages.map((img, index) => (
@@ -556,60 +563,68 @@ function HomePage() {
                     {/* Orange overlay with gradient */}
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/85 via-orange-400/80 to-amber-400/85" />
                 </div>
+                
                 <div className="relative max-w-7xl mx-auto px-4">
-                    {/* Title */}
-                    <div className="text-center mb-10">
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+                    {/* Title Section - Réorganisé */}
+                    <div className="text-center mb-8 md:mb-10">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4 leading-tight">
                             Trouvez votre bonheur
                             <br />
                             <span className="text-amber-200">partout en Afrique</span>
                         </h1>
-                        <p className="text-white/90 text-lg">
+                        <p className="text-white/90 text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4">
                             Immobilier, Vacances, Véhicules – Des milliers d'annonces vous attendent
                         </p>
                     </div>
 
-                    {/* Search Form */}
-                    <div className="max-w-4xl mx-auto bg-white rounded-2xl p-5 shadow-2xl">
-                        <div className="flex flex-col md:flex-row gap-3">
+                    {/* Search Form - Réorganisé et amélioré */}
+                    <div className="max-w-4xl mx-auto bg-white rounded-2xl p-4 md:p-6 shadow-2xl">
+                        {/* Ligne principale de recherche */}
+                        <div className="flex flex-col md:flex-row gap-3 mb-3">
+                            {/* Recherche principale */}
                             <div className="flex-1 relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
                                 <input
                                     type="text"
                                     placeholder="Que recherchez-vous ?"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    className="w-full pl-12 pr-4 h-14 text-base border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    className="w-full pl-12 pr-4 h-12 md:h-14 text-sm md:text-base border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                 />
                             </div>
+                            
+                            {/* Localisation */}
                             <div className="flex-1 relative">
-                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
                                 <input
                                     type="text"
                                     placeholder="Ville ou pays"
                                     value={city}
                                     onChange={(e) => setCity(e.target.value)}
-                                    className="w-full pl-12 pr-4 h-14 text-base border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    className="w-full pl-12 pr-4 h-12 md:h-14 text-sm md:text-base border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                 />
                             </div>
+                            
+                            {/* Catégorie */}
                             <select
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className={`h-14 px-4 rounded-xl bg-white text-gray-700 focus:outline-none md:w-48 appearance-none cursor-pointer transition-all ${
+                                className={`h-12 md:h-14 px-4 rounded-xl bg-white text-gray-700 text-sm md:text-base focus:outline-none md:w-48 appearance-none cursor-pointer transition-all ${
                                     category 
                                         ? 'border-2 border-orange-500 ring-2 ring-orange-100' 
                                         : 'border border-gray-200 hover:border-gray-300 focus:ring-2 focus:ring-orange-500'
                                 }`}
                                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: 'right 12px center', backgroundSize: '20px', backgroundRepeat: 'no-repeat' }}
                             >
-                                <option value="">Catégorie</option>
+                                <option value="">Toutes catégories</option>
                                 <option value="immobilier">Immobilier</option>
                                 <option value="vacance">Vacances</option>
                                 <option value="vehicule">Véhicules</option>
                             </select>
-                            <button className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-lg">
-                                <Search className="w-5 h-5" />
-                                Chercheur
+                            
+                            {/* Bouton recherche */}
+                            <button className="h-12 md:h-14 px-6 md:px-8 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold text-sm md:text-base flex items-center justify-center transition-all shadow-lg whitespace-nowrap">
+                                Rechercher
                             </button>
                         </div>
                         <button 
@@ -741,19 +756,19 @@ function HomePage() {
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex flex-wrap justify-center gap-10 md:gap-20 mt-12">
+                    {/* Stats - Réorganisées */}
+                    <div className="flex flex-wrap justify-center gap-6 md:gap-12 lg:gap-20 mt-8 md:mt-12">
                         <div className="text-center">
-                            <p className="text-3xl md:text-4xl font-bold text-white">{stats.total}</p>
-                            <p className="text-white/70 text-sm">Annonces actives</p>
+                            <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1">{stats.total}</p>
+                            <p className="text-white/80 text-xs md:text-sm font-medium">Annonces actives</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-3xl md:text-4xl font-bold text-white">Plus de {stats.users}</p>
-                            <p className="text-white/70 text-sm">Utilisateurs</p>
+                            <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1">Plus de {stats.users}</p>
+                            <p className="text-white/80 text-xs md:text-sm font-medium">Utilisateurs</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-3xl md:text-4xl font-bold text-white">{stats.countries} ans et plus</p>
-                            <p className="text-white/70 text-sm">Pays-Bas</p>
+                            <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1">{stats.countries}+</p>
+                            <p className="text-white/80 text-xs md:text-sm font-medium">Pays couverts</p>
                         </div>
                     </div>
                 </div>
@@ -942,7 +957,7 @@ function HomePage() {
                         </div>
                     </div>
                     <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-                        © 2024 PlanB. Tous droits réservés.
+                        © 2026 PlanB. Tous droits réservés.
                     </div>
                 </div>
             </footer>
@@ -1400,7 +1415,7 @@ function AnnoncesPage() {
                         </div>
                     </div>
                     <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-                        © 2024 PlanB. Tous droits réservés.
+                        © 2026 PlanB. Tous droits réservés.
                     </div>
                 </div>
             </footer>
@@ -1419,6 +1434,8 @@ function ListingDetailPage() {
     const [showOfferModal, setShowOfferModal] = useState(false);
     const [showReserveModal, setShowReserveModal] = useState(false);
     const [showHotelModal, setShowHotelModal] = useState(false);
+    const [showVirtualTour, setShowVirtualTour] = useState(false);
+    const [virtualTourData, setVirtualTourData] = useState(null);
     const [message, setMessage] = useState('');
     const [visitData, setVisitData] = useState({ date: '', time: '', slotId: null, message: '', phone: '' });
     const [offerData, setOfferData] = useState({ amount: '', message: '', phone: '' });
@@ -1428,6 +1445,34 @@ function ListingDetailPage() {
 
     const listing = mockListings.find(l => l.id === parseInt(id)) || mockListings[1];
     const status = statusConfig[listing.status] || statusConfig['disponible'];
+
+    // Charger la visite virtuelle si disponible
+    useEffect(() => {
+        if (id && listing && listing.has360) {
+            virtualTourAPI.get(parseInt(id))
+                .then(data => {
+                    if (data && data.url) {
+                        setVirtualTourData(data);
+                    } else {
+                        // Si has360 est true mais pas de données API, utiliser une image de démo
+                        setVirtualTourData({
+                            url: 'https://photo-sphere-viewer.js.org/assets/sphere.jpg',
+                            thumbnail: listing.image
+                        });
+                    }
+                })
+                .catch(() => {
+                    // Si erreur mais has360 est true, utiliser une image de démo
+                    setVirtualTourData({
+                        url: 'https://photo-sphere-viewer.js.org/assets/sphere.jpg',
+                        thumbnail: listing.image
+                    });
+                });
+        } else {
+            // Réinitialiser si pas de has360
+            setVirtualTourData(null);
+        }
+    }, [id, listing]);
 
     // Déterminer si c'est une vente ou une location
     const isForSale = listing.transactionType === 'vente';
@@ -1479,13 +1524,13 @@ function ListingDetailPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
+        <div className="min-h-screen bg-gray-50 pt-16">
             {/* Main Content with Image and Sidebar */}
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                     {/* Left Column - Image Gallery */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="relative aspect-[16/10] bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+                    <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
+                        <div className="relative aspect-[4/3] sm:aspect-[16/10] bg-gray-100 rounded-lg sm:rounded-xl overflow-hidden shadow-lg">
                             <img
                                 src={images[currentImageIndex]}
                                 alt={listing.title}
@@ -1494,8 +1539,8 @@ function ListingDetailPage() {
 
                             {/* 360° Badge */}
                             {listing.has360 && (
-                                <div className="absolute top-4 left-4 px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm font-medium flex items-center gap-1.5">
-                                    <Globe className="w-4 h-4" />
+                                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-1.5">
+                                    <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
                                     360°
                                 </div>
                             )}
@@ -1503,100 +1548,102 @@ function ListingDetailPage() {
                             {/* Navigation Arrows */}
                             <button 
                                 onClick={prevImage}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
                             >
-                                <ChevronLeft className="w-6 h-6 text-gray-700" />
+                                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
                             </button>
                             <button 
                                 onClick={nextImage}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
                             >
-                                <ChevronRight className="w-6 h-6 text-gray-700" />
+                                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
                             </button>
 
                             {/* Thumbnails at bottom center */}
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                {images.map((img, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setCurrentImageIndex(index)}
-                                        className={`w-14 h-10 rounded-lg overflow-hidden border-2 ${currentImageIndex === index ? 'border-orange-500' : 'border-white'} shadow-lg`}
-                                    >
-                                        <img src={img} alt="" className="w-full h-full object-cover" />
-                                    </button>
-                                ))}
-                            </div>
+                            {images.length > 1 && (
+                                <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 max-w-[90%] overflow-x-auto scrollbar-hide pb-1">
+                                    {images.map((img, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => setCurrentImageIndex(index)}
+                                            className={`flex-shrink-0 w-10 h-7 sm:w-14 sm:h-10 rounded-lg overflow-hidden border-2 ${currentImageIndex === index ? 'border-orange-500' : 'border-white'} shadow-lg`}
+                                        >
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Title and Info below image */}
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                    <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full border border-gray-200">
+                            <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                    <span className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-full border border-gray-200 whitespace-nowrap">
                                         {listing.subcategory}
                                     </span>
-                                    <span className="text-gray-500 text-sm flex items-center gap-1">
-                                        <Eye className="w-4 h-4" /> {listing.views} vues
+                                    <span className="text-gray-500 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
+                                        <Eye className="w-3 h-3 sm:w-4 sm:h-4" /> {listing.views} vues
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                                     <button 
                                         onClick={() => setIsFavorite(!isFavorite)}
-                                        className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+                                        className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
                                     >
-                                        <Heart className={`w-5 h-5 ${isFavorite ? 'fill-orange-500 text-orange-500' : 'text-gray-600'}`} />
+                                        <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'fill-orange-500 text-orange-500' : 'text-gray-600'}`} />
                                     </button>
-                                    <button className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors">
-                                        <Share2 className="w-5 h-5 text-gray-600" />
+                                    <button className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors">
+                                        <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                     </button>
                                 </div>
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-2">{listing.title}</h1>
-                            <div className="flex items-center gap-1 text-gray-600">
-                                <MapPin className="w-4 h-4 text-orange-500" />
-                                <span>{listing.city}, {listing.country}</span>
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 break-words">{listing.title}</h1>
+                            <div className="flex items-center gap-1 text-sm sm:text-base text-gray-600">
+                                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
+                                <span className="truncate">{listing.city}, {listing.country}</span>
                             </div>
                         </div>
 
                         {/* Characteristics */}
                         {listing.category === 'vehicule' && (
-                            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Caractéristiques du véhicule</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
-                                            <Car className="w-5 h-5 text-orange-500" />
+                            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-100">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Caractéristiques du véhicule</h2>
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Car className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-gray-900">Toyota</p>
-                                            <p className="text-sm text-gray-500">Marque</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                                            <LayoutGrid className="w-5 h-5 text-blue-500" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-gray-900">Land Cruiser Prado</p>
-                                            <p className="text-sm text-gray-500">Modèle</p>
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-sm sm:text-base text-gray-900 truncate">Toyota</p>
+                                            <p className="text-xs sm:text-sm text-gray-500">Marque</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                                            <Calendar className="w-5 h-5 text-green-500" />
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-gray-900">2020</p>
-                                            <p className="text-sm text-gray-500">Année</p>
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-sm sm:text-base text-gray-900 truncate">Land Cruiser Prado</p>
+                                            <p className="text-xs sm:text-sm text-gray-500">Modèle</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                                            <Eye className="w-5 h-5 text-purple-500" />
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-gray-900">45 000 km</p>
-                                            <p className="text-sm text-gray-500">Kilométrage</p>
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-sm sm:text-base text-gray-900">2020</p>
+                                            <p className="text-xs sm:text-sm text-gray-500">Année</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-sm sm:text-base text-gray-900">45 000 km</p>
+                                            <p className="text-xs sm:text-sm text-gray-500">Kilométrage</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1604,9 +1651,9 @@ function ListingDetailPage() {
                         )}
 
                         {/* Description */}
-                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
-                            <p className="text-gray-700 leading-relaxed">
+                        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Description</h2>
+                            <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                                 {listing.category === 'vacance' 
                                     ? "Chambre deluxe avec vue sur mer dans notre hôtel 4 étoiles. Inclut petit-déjeuner, WiFi, piscine et accès spa. Service de restauration 24h/24."
                                     : "Toyota Land Cruiser Prado 2020, essence, automatique, 45000km. Véhicule en excellent état, première main, toutes options. Carnet d'entretien complet chez Toyota."
@@ -1616,79 +1663,92 @@ function ListingDetailPage() {
 
                         {/* Virtual Tour 360° - Full width like main image */}
                         {listing.has360 && (
-                            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Visite Virtuelle 360°</h2>
-                                <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-[16/10]">
-                                    <button className="absolute top-4 left-4 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-orange-600 transition-colors">
-                                        <Plus className="w-4 h-4" />
-                                        Visite Virtuelle 360°
+                            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-100">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Visite Virtuelle 360°</h2>
+                                <div className="relative bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden aspect-[4/3] sm:aspect-[16/10]">
+                                    <img 
+                                        src={virtualTourData?.thumbnail || listing.image} 
+                                        alt="Visite virtuelle 360°" 
+                                        className="w-full h-full object-cover opacity-50"
+                                    />
+                                    <button 
+                                        onClick={() => {
+                                            if (virtualTourData) {
+                                                setShowVirtualTour(true);
+                                            } else {
+                                                // Si pas encore chargé, utiliser une image de démo
+                                                setVirtualTourData({
+                                                    url: 'https://photo-sphere-viewer.js.org/assets/sphere.jpg',
+                                                    thumbnail: listing.image
+                                                });
+                                                setShowVirtualTour(true);
+                                            }
+                                        }}
+                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 sm:px-6 py-2 sm:py-3 bg-orange-500 text-white rounded-lg text-sm sm:text-base font-medium flex items-center gap-2 hover:bg-orange-600 transition-colors shadow-lg z-10"
+                                    >
+                                        <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        <span>Lancer la visite virtuelle</span>
                                     </button>
-                                    <button className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors">
-                                        <Globe className="w-5 h-5 text-white" />
-                                    </button>
-                                    <div className="flex items-center justify-center h-full text-center px-8">
-                                        <div>
-                                            <p className="text-white text-xl font-semibold mb-2">Le modèle n'est pas disponible.</p>
-                                            <p className="text-gray-400">Si le problème persiste, consultez notre guide de dépannage.</p>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {/* Reviews - Separate section */}
-                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Avis sur ce bien</h2>
-                            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                                <Star className="w-12 h-12 mb-3 opacity-30" />
-                                <p className="text-gray-500">Aucun avis pour le moment</p>
+                        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Avis sur ce bien</h2>
+                            <div className="flex flex-col items-center justify-center py-6 sm:py-8 text-gray-400">
+                                <Star className="w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-3 opacity-30" />
+                                <p className="text-sm sm:text-base text-gray-500">Aucun avis pour le moment</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Right Column - Sidebar */}
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         {/* Price Card */}
-                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-100 sticky top-4 sm:top-6">
                             {/* Status Badge */}
-                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 ${status.bgLight} rounded-full mb-4`}>
-                                <span className={`w-2 h-2 rounded-full ${status.color}`}></span>
-                                <span className={`text-sm font-medium ${status.textColor}`}>{status.label}</span>
+                            <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 ${status.bgLight} rounded-full mb-3 sm:mb-4`}>
+                                <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${status.color}`}></span>
+                                <span className={`text-xs sm:text-sm font-medium ${status.textColor}`}>{status.label}</span>
                             </div>
 
-                            <p className="text-3xl font-bold text-orange-500 mb-1">
+                            <p className="text-2xl sm:text-3xl font-bold text-orange-500 mb-1 break-words">
                                 {formatPrice(listing.price)} FCFA
-                                {listing.priceUnit && <span className="text-lg font-normal text-gray-500">/{listing.priceUnit}</span>}
+                                {listing.priceUnit && <span className="text-base sm:text-lg font-normal text-gray-500">/{listing.priceUnit}</span>}
                             </p>
 
                             {/* Boutons selon le type de transaction */}
-                            <div className="space-y-3 mt-4">
+                            <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
                                 {/* VENTE: Visite + Offre + Réserver avec acompte */}
                                 {isForSale && listing.status !== 'vendu' && (
                                     <>
                                         <button 
                                             onClick={() => setShowVisitModal(true)}
                                             disabled={listing.status === 'reserve'}
-                                            className="w-full h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                                            className="w-full h-11 sm:h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                         >
-                                            <Calendar className="w-5 h-5" />
-                                            Demander une visite
+                                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                                            <span className="hidden sm:inline">Demander une visite</span>
+                                            <span className="sm:hidden">Visite</span>
                                         </button>
                                         <button 
                                             onClick={() => setShowOfferModal(true)}
                                             disabled={listing.status === 'reserve' || listing.status === 'vendu'}
-                                            className="w-full h-12 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                                            className="w-full h-11 sm:h-12 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                         >
-                                            <DollarSign className="w-5 h-5" />
-                                            Faire une offre
+                                            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+                                            <span className="hidden sm:inline">Faire une offre</span>
+                                            <span className="sm:hidden">Offre</span>
                                         </button>
                                         <button 
                                             onClick={() => setShowReserveModal(true)}
                                             disabled={listing.status === 'reserve' || listing.status === 'vendu'}
-                                            className="w-full h-12 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                                            className="w-full h-11 sm:h-12 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                         >
-                                            <Lock className="w-5 h-5" />
-                                            Réserver avec acompte
+                                            <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
+                                            <span className="hidden sm:inline">Réserver avec acompte</span>
+                                            <span className="sm:hidden">Réserver</span>
                                         </button>
                                     </>
                                 )}
@@ -1698,10 +1758,11 @@ function ListingDetailPage() {
                                     <button 
                                         onClick={() => setShowVisitModal(true)}
                                         disabled={listing.status === 'reserve'}
-                                        className="w-full h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                                        className="w-full h-11 sm:h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                     >
-                                        <Calendar className="w-5 h-5" />
-                                        Demander une visite
+                                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        <span className="hidden sm:inline">Demander une visite</span>
+                                        <span className="sm:hidden">Visite</span>
                                     </button>
                                 )}
 
@@ -1710,10 +1771,11 @@ function ListingDetailPage() {
                                     <button 
                                         onClick={() => setShowReserveModal(true)}
                                         disabled={listing.status === 'reserve'}
-                                        className="w-full h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                                        className="w-full h-11 sm:h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                     >
-                                        <Calendar className="w-5 h-5" />
-                                        Réserver une période
+                                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        <span className="hidden sm:inline">Réserver une période</span>
+                                        <span className="sm:hidden">Réserver</span>
                                     </button>
                                 )}
 
@@ -1721,25 +1783,27 @@ function ListingDetailPage() {
                                 {isHotel && (
                                     <button 
                                         onClick={() => setShowHotelModal(true)}
-                                        className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                                        className="w-full h-11 sm:h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                     >
-                                        <Hotel className="w-5 h-5" />
-                                        Réserver une chambre
+                                        <Hotel className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        <span className="hidden sm:inline">Réserver une chambre</span>
+                                        <span className="sm:hidden">Réserver</span>
                                     </button>
                                 )}
 
                                 {/* Statut Vendu */}
                                 {listing.status === 'vendu' && (
-                                    <div className="w-full h-12 bg-red-100 text-red-600 rounded-lg font-medium flex items-center justify-center gap-2">
-                                        <Ban className="w-5 h-5" />
-                                        Ce bien a été vendu
+                                    <div className="w-full h-11 sm:h-12 bg-red-100 text-red-600 rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-2">
+                                        <Ban className="w-4 h-4 sm:w-5 sm:h-5" />
+                                        <span className="hidden sm:inline">Ce bien a été vendu</span>
+                                        <span className="sm:hidden">Vendu</span>
                                     </div>
                                 )}
 
                                 {/* Statut Réservé */}
                                 {listing.status === 'reserve' && listing.reservedUntil && (
-                                    <div className="bg-blue-50 rounded-lg p-3 text-sm">
-                                        <p className="text-blue-700 font-medium flex items-center gap-2"><Lock className="w-4 h-4" /> Bien réservé</p>
+                                    <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-xs sm:text-sm">
+                                        <p className="text-blue-700 font-medium flex items-center gap-2"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> Bien réservé</p>
                                         <p className="text-blue-600">Jusqu'au {new Date(listing.reservedUntil).toLocaleDateString('fr-FR')}</p>
                                         {listing.depositPaid && (
                                             <p className="text-blue-500 mt-1">Acompte: {formatPrice(listing.depositPaid)} FCFA</p>
@@ -1750,53 +1814,54 @@ function ListingDetailPage() {
                                 {/* Bouton Contact toujours visible */}
                                 <button 
                                     onClick={() => setShowContactModal(true)}
-                                    className="w-full h-12 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                                    className="w-full h-11 sm:h-12 border border-gray-200 rounded-lg text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
                                 >
-                                    <MessageSquare className="w-5 h-5" />
-                                    Contacter le vendeur
+                                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="hidden sm:inline">Contacter le vendeur</span>
+                                    <span className="sm:hidden">Contacter</span>
                                 </button>
                             </div>
 
-                            <div className="mt-6 space-y-3">
-                                <div className="flex items-center gap-3 text-gray-600">
-                                    <Phone className="w-5 h-5" />
-                                    <span>+225 07 08 09 10 11</span>
+                            <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+                                <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-600">
+                                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                                    <span className="truncate">+225 07 08 09 10 11</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-gray-600">
-                                    <Mail className="w-5 h-5" />
-                                    <span>contact@residencecocody.ci</span>
+                                <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-600">
+                                    <Mail className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                                    <span className="truncate">contact@residencecocody.ci</span>
                                 </div>
                             </div>
 
                             {/* Seller Info */}
-                            <div className="mt-6 pt-6 border-t border-gray-100">
+                            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
                                 <div 
                                     onClick={() => navigate(`/seller/${listing.id}`)}
-                                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                    className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors"
                                 >
-                                    <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                                         R
                                     </div>
-                                    <div>
-                                        <p className="font-semibold text-gray-900 hover:text-orange-500 transition-colors">Résidences Prestige CI</p>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-sm sm:text-base text-gray-900 hover:text-orange-500 transition-colors truncate">Résidences Prestige CI</p>
                                         {listing.isPro && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded mt-1">
                                                 <Star className="w-3 h-3 fill-current" /> PRO
                                             </span>
                                         )}
                                     </div>
                                 </div>
-                                <p className="text-sm text-gray-500 mt-2">Membre depuis janvier 2026</p>
+                                <p className="text-xs sm:text-sm text-gray-500 mt-2">Membre depuis janvier 2026</p>
                             </div>
                         </div>
 
                         {/* Security Tips */}
-                        <div className="bg-orange-50 rounded-xl p-6 border border-orange-100">
-                            <div className="flex items-center gap-2 text-gray-900 font-semibold mb-3">
-                                <AlertTriangle className="w-5 h-5 text-orange-500" />
-                                Conseils de sécurité
+                        <div className="bg-orange-50 rounded-xl p-4 sm:p-6 border border-orange-100">
+                            <div className="flex items-center gap-2 text-sm sm:text-base text-gray-900 font-semibold mb-2 sm:mb-3">
+                                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 flex-shrink-0" />
+                                <span>Conseils de sécurité</span>
                             </div>
-                            <ul className="text-sm text-gray-700 space-y-2">
+                            <ul className="text-xs sm:text-sm text-gray-700 space-y-1.5 sm:space-y-2">
                                 <li>• Ne payez jamais avant d'avoir visité</li>
                                 <li>• Vérifiez les documents du bien</li>
                                 <li>• Utilisez notre système de paiement sécurisé</li>
@@ -1846,53 +1911,53 @@ function ListingDetailPage() {
                         </div>
                     </div>
                     <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-                        © 2024 PlanB. Tous droits réservés.
+                        © 2026 PlanB. Tous droits réservés.
                     </div>
                 </div>
             </footer>
 
             {/* Contact Modal */}
             {showContactModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white rounded-xl sm:rounded-2xl max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">Contacter le vendeur</h2>
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Contacter le vendeur</h2>
                             <button 
                                 onClick={() => setShowContactModal(false)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 flex-shrink-0"
                             >
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
 
                         {/* Listing Preview */}
-                        <div className="p-4 bg-gray-50 border-b border-gray-100">
-                            <div className="flex gap-3">
+                        <div className="p-3 sm:p-4 bg-gray-50 border-b border-gray-100">
+                            <div className="flex gap-2 sm:gap-3">
                                 <img 
                                     src={listing.image} 
                                     alt={listing.title}
-                                    className="w-20 h-16 object-cover rounded-lg"
+                                    className="w-16 h-12 sm:w-20 sm:h-16 object-cover rounded-lg flex-shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                                    <p className="text-orange-500 font-semibold">
+                                    <h3 className="font-medium text-sm sm:text-base text-gray-900 truncate">{listing.title}</h3>
+                                    <p className="text-orange-500 font-semibold text-sm sm:text-base">
                                         {formatPrice(listing.price)} FCFA
                                         {listing.priceUnit && <span className="text-gray-500 font-normal">/{listing.priceUnit}</span>}
                                     </p>
-                                    <p className="text-sm text-gray-500">{listing.city}, {listing.country}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 truncate">{listing.city}, {listing.country}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Seller Info */}
-                        <div className="p-4 border-b border-gray-100">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                        <div className="p-3 sm:p-4 border-b border-gray-100">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                                     R
                                 </div>
-                                <div>
-                                    <p className="font-medium text-gray-900">Résidences Prestige CI</p>
+                                <div className="min-w-0">
+                                    <p className="font-medium text-sm sm:text-base text-gray-900 truncate">Résidences Prestige CI</p>
                                     {listing.isPro && (
                                         <span className="inline-flex items-center gap-1 text-xs text-orange-600">
                                             <Star className="w-3 h-3 fill-current" /> Vendeur PRO
@@ -1903,14 +1968,14 @@ function ListingDetailPage() {
                         </div>
 
                         {/* Suggested Messages */}
-                        <div className="p-4 border-b border-gray-100">
-                            <p className="text-sm text-gray-500 mb-3">Messages suggérés :</p>
+                        <div className="p-3 sm:p-4 border-b border-gray-100">
+                            <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">Messages suggérés :</p>
                             <div className="space-y-2">
                                 {suggestedMessages.map((msg, index) => (
                                     <button
                                         key={index}
                                         onClick={() => setMessage(msg)}
-                                        className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-colors ${
+                                        className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm transition-colors ${
                                             message === msg 
                                                 ? 'bg-orange-50 border-2 border-orange-500 text-orange-700' 
                                                 : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
@@ -1923,21 +1988,21 @@ function ListingDetailPage() {
                         </div>
 
                         {/* Custom Message */}
-                        <div className="p-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="p-3 sm:p-4">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                                 Ou écrivez votre message :
                             </label>
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 placeholder="Bonjour, je suis intéressé(e) par votre annonce..."
-                                className="w-full h-32 px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                className="w-full h-24 sm:h-32 px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                             />
                             
-                            <div className="flex gap-3 mt-4">
+                            <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
                                 <button
                                     onClick={() => setShowContactModal(false)}
-                                    className="flex-1 h-12 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50"
+                                    className="flex-1 h-10 sm:h-12 border border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     Annuler
                                 </button>
@@ -1948,9 +2013,9 @@ function ListingDetailPage() {
                                         setMessage('');
                                     }}
                                     disabled={!message.trim()}
-                                    className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                                    className="flex-1 h-10 sm:h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg sm:rounded-xl text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                 >
-                                    <MessageSquare className="w-5 h-5" />
+                                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
                                     Envoyer
                                 </button>
                             </div>
@@ -1961,48 +2026,48 @@ function ListingDetailPage() {
 
             {/* Visit Modal - avec créneaux disponibles */}
             {showVisitModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">Demander une visite</h2>
-                            <button onClick={() => setShowVisitModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white rounded-xl sm:rounded-2xl max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Demander une visite</h2>
+                            <button onClick={() => setShowVisitModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 flex-shrink-0">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
 
-                        <div className="p-4 bg-gray-50 border-b border-gray-100">
-                            <div className="flex gap-3">
-                                <img src={listing.image} alt={listing.title} className="w-20 h-16 object-cover rounded-lg" />
+                        <div className="p-3 sm:p-4 bg-gray-50 border-b border-gray-100">
+                            <div className="flex gap-2 sm:gap-3">
+                                <img src={listing.image} alt={listing.title} className="w-16 h-12 sm:w-20 sm:h-16 object-cover rounded-lg flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                                    <p className="text-orange-500 font-semibold">{formatPrice(listing.price)} FCFA</p>
-                                    <p className="text-sm text-gray-500">{listing.city}, {listing.country}</p>
+                                    <h3 className="font-medium text-sm sm:text-base text-gray-900 truncate">{listing.title}</h3>
+                                    <p className="text-orange-500 font-semibold text-sm sm:text-base">{formatPrice(listing.price)} FCFA</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 truncate">{listing.city}, {listing.country}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-4">
+                        <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                             {/* Créneaux disponibles */}
                             {listing.visitSlots && listing.visitSlots.length > 0 ? (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                                        <Calendar className="w-4 h-4 inline mr-1 text-orange-500" />
+                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
+                                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-orange-500" />
                                         Créneaux disponibles
                                     </label>
-                                    <div className="space-y-3">
+                                    <div className="space-y-2 sm:space-y-3">
                                         {Object.entries(groupedSlots).map(([date, slots]) => (
-                                            <div key={date} className="border border-gray-200 rounded-xl p-3">
-                                                <p className="font-medium text-gray-800 mb-2 flex items-center gap-2">
-                                                    <CalendarCheck className="w-4 h-4 text-orange-500" />
-                                                    {new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                            <div key={date} className="border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                                                <p className="font-medium text-xs sm:text-sm text-gray-800 mb-2 flex items-center gap-1.5 sm:gap-2">
+                                                    <CalendarCheck className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
+                                                    <span className="break-words">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                                                 </p>
-                                                <div className="flex flex-wrap gap-2">
+                                                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                                     {slots.map(slot => (
                                                         <button
                                                             key={slot.id}
                                                             onClick={() => !slot.booked && setVisitData({...visitData, slotId: slot.id, date: slot.date, time: `${slot.startTime}-${slot.endTime}`})}
                                                             disabled={slot.booked}
-                                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                                            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                                                                 slot.booked 
                                                                     ? 'bg-red-50 text-red-400 line-through cursor-not-allowed' 
                                                                     : visitData.slotId === slot.id
@@ -2011,7 +2076,7 @@ function ListingDetailPage() {
                                                             }`}
                                                         >
                                                             {slot.startTime} - {slot.endTime}
-                                                            {slot.booked && <X className="w-3 h-3 ml-1" />}
+                                                            {slot.booked && <X className="w-2.5 h-2.5 sm:w-3 sm:h-3 ml-1" />}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -2020,17 +2085,17 @@ function ListingDetailPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-6 text-gray-500">
-                                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                                    <p>Aucun créneau disponible pour le moment</p>
-                                    <p className="text-sm">Contactez le vendeur pour convenir d'un rendez-vous</p>
+                                <div className="text-center py-4 sm:py-6 text-gray-500">
+                                    <Calendar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 opacity-30" />
+                                    <p className="text-sm sm:text-base">Aucun créneau disponible pour le moment</p>
+                                    <p className="text-xs sm:text-sm">Contactez le vendeur pour convenir d'un rendez-vous</p>
                                 </div>
                             )}
 
                             {/* Téléphone */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <Phone className="w-4 h-4 inline mr-1 text-orange-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <Phone className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-orange-500" />
                                     Votre numéro de téléphone
                                 </label>
                                 <input
@@ -2038,26 +2103,26 @@ function ListingDetailPage() {
                                     value={visitData.phone}
                                     onChange={(e) => setVisitData({...visitData, phone: e.target.value})}
                                     placeholder="+225 07 00 00 00 00"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                                 />
                             </div>
 
                             {/* Message */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <MessageSquare className="w-4 h-4 inline mr-1 text-orange-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-orange-500" />
                                     Message (optionnel)
                                 </label>
                                 <textarea
                                     value={visitData.message}
                                     onChange={(e) => setVisitData({...visitData, message: e.target.value})}
                                     placeholder="Questions ou informations complémentaires..."
-                                    className="w-full h-20 px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full h-16 sm:h-20 px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button onClick={() => setShowVisitModal(false)} className="flex-1 h-12 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50">
+                            <div className="flex gap-2 sm:gap-3 pt-2">
+                                <button onClick={() => setShowVisitModal(false)} className="flex-1 h-10 sm:h-12 border border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50">
                                     Annuler
                                 </button>
                                 <button
@@ -2068,10 +2133,11 @@ function ListingDetailPage() {
                                         navigate('/reservations');
                                     }}
                                     disabled={!visitData.slotId || !visitData.phone}
-                                    className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                                    className="flex-1 h-10 sm:h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg sm:rounded-xl text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                 >
-                                    <Check className="w-5 h-5" />
-                                    Confirmer la visite
+                                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="hidden sm:inline">Confirmer la visite</span>
+                                    <span className="sm:hidden">Confirmer</span>
                                 </button>
                             </div>
                         </div>
@@ -2081,31 +2147,31 @@ function ListingDetailPage() {
 
             {/* Offer Modal - Faire une offre d'achat */}
             {showOfferModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">Faire une offre d'achat</h2>
-                            <button onClick={() => setShowOfferModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white rounded-xl sm:rounded-2xl max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Faire une offre d'achat</h2>
+                            <button onClick={() => setShowOfferModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 flex-shrink-0">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
 
-                        <div className="p-4 bg-gray-50 border-b border-gray-100">
-                            <div className="flex gap-3">
-                                <img src={listing.image} alt={listing.title} className="w-20 h-16 object-cover rounded-lg" />
+                        <div className="p-3 sm:p-4 bg-gray-50 border-b border-gray-100">
+                            <div className="flex gap-2 sm:gap-3">
+                                <img src={listing.image} alt={listing.title} className="w-16 h-12 sm:w-20 sm:h-16 object-cover rounded-lg flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                                    <p className="text-orange-500 font-semibold">Prix demandé: {formatPrice(listing.price)} FCFA</p>
-                                    <p className="text-sm text-gray-500">{listing.city}, {listing.country}</p>
+                                    <h3 className="font-medium text-sm sm:text-base text-gray-900 truncate">{listing.title}</h3>
+                                    <p className="text-orange-500 font-semibold text-sm sm:text-base">Prix demandé: {formatPrice(listing.price)} FCFA</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 truncate">{listing.city}, {listing.country}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-4">
+                        <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                             {/* Montant de l'offre */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                    <Banknote className="w-4 h-4 text-green-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                    <Banknote className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                                     Votre offre (FCFA)
                                 </label>
                                 <input
@@ -2113,15 +2179,15 @@ function ListingDetailPage() {
                                     value={offerData.amount}
                                     onChange={(e) => setOfferData({...offerData, amount: e.target.value})}
                                     placeholder="Montant proposé"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-semibold"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-base sm:text-lg font-semibold"
                                 />
                                 {offerData.amount && (
-                                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                                    <p className="mt-2 text-xs sm:text-sm text-gray-500 flex items-center gap-1 flex-wrap">
                                         {parseInt(offerData.amount) < listing.price 
-                                            ? <><TrendingUp className="w-4 h-4 rotate-180 text-red-500" /> {Math.round((1 - parseInt(offerData.amount) / listing.price) * 100)}% en dessous du prix demandé</>
+                                            ? <><TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 rotate-180 text-red-500" /> <span>{Math.round((1 - parseInt(offerData.amount) / listing.price) * 100)}% en dessous du prix demandé</span></>
                                             : parseInt(offerData.amount) > listing.price 
-                                                ? <><TrendingUp className="w-4 h-4 text-green-500" /> {Math.round((parseInt(offerData.amount) / listing.price - 1) * 100)}% au dessus du prix demandé</>
-                                                : <><Check className="w-4 h-4 text-green-500" /> Prix demandé</>
+                                                ? <><TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> <span>{Math.round((parseInt(offerData.amount) / listing.price - 1) * 100)}% au dessus du prix demandé</span></>
+                                                : <><Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> <span>Prix demandé</span></>
                                         }
                                     </p>
                                 )}
@@ -2129,8 +2195,8 @@ function ListingDetailPage() {
 
                             {/* Téléphone */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <Phone className="w-4 h-4 inline mr-1 text-green-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <Phone className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-500" />
                                     Votre numéro de téléphone
                                 </label>
                                 <input
@@ -2138,27 +2204,27 @@ function ListingDetailPage() {
                                     value={offerData.phone}
                                     onChange={(e) => setOfferData({...offerData, phone: e.target.value})}
                                     placeholder="+225 07 00 00 00 00"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                                 />
                             </div>
 
                             {/* Message */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <MessageSquare className="w-4 h-4 inline mr-1 text-green-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-green-500" />
                                     Message (optionnel)
                                 </label>
                                 <textarea
                                     value={offerData.message}
                                     onChange={(e) => setOfferData({...offerData, message: e.target.value})}
                                     placeholder="Justifiez votre offre ou posez vos conditions..."
-                                    className="w-full h-20 px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    className="w-full h-16 sm:h-20 px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                                 />
                             </div>
 
                             {/* Info */}
-                            <div className="bg-green-50 rounded-xl p-3 text-sm text-green-700">
-                                <p className="font-medium mb-1 flex items-center gap-1"><Info className="w-4 h-4" /> Comment ça marche ?</p>
+                            <div className="bg-green-50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-xs sm:text-sm text-green-700">
+                                <p className="font-medium mb-1 flex items-center gap-1"><Info className="w-3 h-3 sm:w-4 sm:h-4" /> Comment ça marche ?</p>
                                 <ul className="text-green-600 space-y-1">
                                     <li>• Le vendeur recevra votre offre</li>
                                     <li>• Il peut accepter, refuser ou faire une contre-offre</li>
@@ -2166,8 +2232,8 @@ function ListingDetailPage() {
                                 </ul>
                             </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button onClick={() => setShowOfferModal(false)} className="flex-1 h-12 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50">
+                            <div className="flex gap-2 sm:gap-3 pt-2">
+                                <button onClick={() => setShowOfferModal(false)} className="flex-1 h-10 sm:h-12 border border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50">
                                     Annuler
                                 </button>
                                 <button
@@ -2178,10 +2244,11 @@ function ListingDetailPage() {
                                         navigate('/reservations');
                                     }}
                                     disabled={!offerData.amount || !offerData.phone}
-                                    className="flex-1 h-12 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                                    className="flex-1 h-10 sm:h-12 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg sm:rounded-xl text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                 >
-                                    <Check className="w-5 h-5" />
-                                    Envoyer l'offre
+                                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="hidden sm:inline">Envoyer l'offre</span>
+                                    <span className="sm:hidden">Envoyer</span>
                                 </button>
                             </div>
                         </div>
@@ -2191,32 +2258,32 @@ function ListingDetailPage() {
 
             {/* Reserve Modal - Réservation avec acompte ou période */}
             {showReserveModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white rounded-xl sm:rounded-2xl max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                                 {isForSale ? 'Réserver avec acompte' : 'Réserver une période'}
                             </h2>
-                            <button onClick={() => setShowReserveModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                            <button onClick={() => setShowReserveModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 flex-shrink-0">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
 
-                        <div className="p-4 bg-gray-50 border-b border-gray-100">
-                            <div className="flex gap-3">
-                                <img src={listing.image} alt={listing.title} className="w-20 h-16 object-cover rounded-lg" />
+                        <div className="p-3 sm:p-4 bg-gray-50 border-b border-gray-100">
+                            <div className="flex gap-2 sm:gap-3">
+                                <img src={listing.image} alt={listing.title} className="w-16 h-12 sm:w-20 sm:h-16 object-cover rounded-lg flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                                    <p className="text-orange-500 font-semibold">
+                                    <h3 className="font-medium text-sm sm:text-base text-gray-900 truncate">{listing.title}</h3>
+                                    <p className="text-orange-500 font-semibold text-sm sm:text-base">
                                         {formatPrice(listing.price)} FCFA
                                         {listing.priceUnit && <span className="text-gray-500 font-normal">/{listing.priceUnit}</span>}
                                     </p>
-                                    <p className="text-sm text-gray-500">{listing.city}, {listing.country}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 truncate">{listing.city}, {listing.country}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-4">
+                        <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                             {/* Pour les ventes - acompte */}
                             {isForSale && (
                                 <>
@@ -2306,8 +2373,8 @@ function ListingDetailPage() {
 
                             {/* Téléphone */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <Phone className="w-4 h-4 inline mr-1 text-blue-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <Phone className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-blue-500" />
                                     Votre numéro de téléphone
                                 </label>
                                 <input
@@ -2315,26 +2382,26 @@ function ListingDetailPage() {
                                     value={reserveData.phone}
                                     onChange={(e) => setReserveData({...reserveData, phone: e.target.value})}
                                     placeholder="+225 07 00 00 00 00"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 />
                             </div>
 
                             {/* Message */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <MessageSquare className="w-4 h-4 inline mr-1 text-blue-500" />
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 text-blue-500" />
                                     Message (optionnel)
                                 </label>
                                 <textarea
                                     value={reserveData.message}
                                     onChange={(e) => setReserveData({...reserveData, message: e.target.value})}
                                     placeholder="Informations complémentaires..."
-                                    className="w-full h-20 px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full h-16 sm:h-20 px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button onClick={() => setShowReserveModal(false)} className="flex-1 h-12 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50">
+                            <div className="flex gap-2 sm:gap-3 pt-2">
+                                <button onClick={() => setShowReserveModal(false)} className="flex-1 h-10 sm:h-12 border border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium text-gray-700 hover:bg-gray-50">
                                     Annuler
                                 </button>
                                 <button
@@ -2349,10 +2416,11 @@ function ListingDetailPage() {
                                         navigate('/reservations');
                                     }}
                                     disabled={!reserveData.phone || (isShortRental && (!reserveData.startDate || !reserveData.endDate))}
-                                    className="flex-1 h-12 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                                    className="flex-1 h-10 sm:h-12 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg sm:rounded-xl text-sm sm:text-base font-medium flex items-center justify-center gap-2"
                                 >
-                                    <CreditCard className="w-5 h-5" />
-                                    {isForSale ? 'Payer l\'acompte' : 'Confirmer'}
+                                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="hidden sm:inline">{isForSale ? 'Payer l\'acompte' : 'Confirmer'}</span>
+                                    <span className="sm:hidden">{isForSale ? 'Payer' : 'Confirmer'}</span>
                                 </button>
                             </div>
                         </div>
@@ -2362,11 +2430,11 @@ function ListingDetailPage() {
 
             {/* Hotel Modal - Réservation de chambre */}
             {showHotelModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">Réserver une chambre</h2>
-                            <button onClick={() => setShowHotelModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="bg-white rounded-xl sm:rounded-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Réserver une chambre</h2>
+                            <button onClick={() => setShowHotelModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 flex-shrink-0">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
@@ -2549,6 +2617,16 @@ function ListingDetailPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Modal Visite Virtuelle */}
+            {showVirtualTour && virtualTourData && (
+                <VirtualTour
+                    isOpen={showVirtualTour}
+                    onClose={() => setShowVirtualTour(false)}
+                    imageUrl={virtualTourData.url}
+                    thumbnailUrl={virtualTourData.thumbnail}
+                />
             )}
         </div>
     );
@@ -3268,61 +3346,61 @@ function MyListingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-20">
-            <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Mes annonces</h1>
-                        <p className="text-gray-500">{stats.total} annonces • {stats.totalViews} vues totales</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Mes annonces</h1>
+                        <p className="text-xs sm:text-sm text-gray-500">{stats.total} annonces • {stats.totalViews} vues totales</p>
                     </div>
                     <button 
                         onClick={() => navigate('/publish')}
-                        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium flex items-center gap-2"
+                        className="w-full sm:w-auto px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
-                        <Plus className="w-5 h-5" /> Nouvelle annonce
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" /> <span>Nouvelle annonce</span>
                     </button>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500">Total</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
+                        <p className="text-xs sm:text-sm text-gray-500">Total</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</p>
                     </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500">Actives</p>
-                        <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+                    <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
+                        <p className="text-xs sm:text-sm text-gray-500">Actives</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.active}</p>
                     </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500">Vues totales</p>
-                        <p className="text-2xl font-bold text-blue-600">{stats.totalViews}</p>
+                    <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
+                        <p className="text-xs sm:text-sm text-gray-500">Vues totales</p>
+                        <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.totalViews}</p>
                     </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500">Contacts reçus</p>
-                        <p className="text-2xl font-bold text-orange-500">{stats.totalContacts}</p>
+                    <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
+                        <p className="text-xs sm:text-sm text-gray-500">Contacts reçus</p>
+                        <p className="text-xl sm:text-2xl font-bold text-orange-500">{stats.totalContacts}</p>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex-1 min-w-[200px]">
+                <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 mb-4 sm:mb-6">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                        <div className="flex-1 w-full">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Rechercher une annonce..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 />
                             </div>
                         </div>
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                         >
                             <option value="recent">Plus récentes</option>
                             <option value="views">Plus vues</option>
@@ -3333,7 +3411,7 @@ function MyListingsPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                <div className="flex gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-hide">
                     {[
                         { id: 'all', label: 'Toutes', count: listings.length },
                         { id: 'active', label: 'Actives', count: listings.filter(l => l.status === 'active').length },
@@ -3344,98 +3422,99 @@ function MyListingsPage() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap text-xs sm:text-sm ${
                                 activeTab === tab.id
                                     ? 'bg-orange-500 text-white'
                                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                             }`}
                         >
-                            {tab.label} ({tab.count})
+                            {tab.label} <span className="hidden sm:inline">({tab.count})</span>
+                            <span className="sm:hidden"> {tab.count}</span>
                         </button>
                     ))}
                 </div>
 
                 {/* Listings */}
                 {filteredListings.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                         {filteredListings.map(listing => {
                             const statusConfig = getStatusConfig(listing.status);
                             const StatusIcon = statusConfig.icon;
                             const daysLeft = listing.expiresAt ? Math.ceil((new Date(listing.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)) : null;
                             
                             return (
-                                <div key={listing.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                                    <div className="flex gap-4">
-                                        <div className="relative">
-                                            <img src={listing.image} alt="" className="w-32 h-32 rounded-lg object-cover" />
+                                <div key={listing.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4">
+                                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                        <div className="relative flex-shrink-0">
+                                            <img src={listing.image} alt="" className="w-full sm:w-32 h-32 sm:h-32 rounded-lg object-cover" />
                                             <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${statusConfig.bg} ${statusConfig.text}`}>
                                                 <StatusIcon className="w-3 h-3" />
                                                 {statusConfig.label}
                                             </span>
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 text-lg">{listing.title}</h3>
-                                                    <p className="text-orange-500 font-bold text-xl">{formatPrice(listing.price)} FCFA</p>
-                                                    <p className="text-sm text-gray-500 mt-1">{listing.category} • {listing.city}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">{listing.title}</h3>
+                                                    <p className="text-orange-500 font-bold text-lg sm:text-xl">{formatPrice(listing.price)} FCFA</p>
+                                                    <p className="text-xs sm:text-sm text-gray-500 mt-1">{listing.category} • {listing.city}</p>
                                                 </div>
                                             </div>
                                             
                                             {/* Stats */}
-                                            <div className="flex items-center gap-6 mt-3">
-                                                <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                                                    <Eye className="w-4 h-4 text-gray-400" /> {listing.views} vues
+                                            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-3">
+                                                <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+                                                    <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" /> {listing.views} vues
                                                 </span>
-                                                <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                                                    <MessageSquare className="w-4 h-4 text-gray-400" /> {listing.contacts} contacts
+                                                <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+                                                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" /> {listing.contacts} contacts
                                                 </span>
-                                                <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                                                    <Heart className="w-4 h-4 text-gray-400" /> {listing.favorites} favoris
+                                                <span className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+                                                    <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" /> {listing.favorites} favoris
                                                 </span>
                                                 {daysLeft !== null && listing.status === 'active' && (
-                                                    <span className={`flex items-center gap-1.5 text-sm ${daysLeft <= 7 ? 'text-red-600' : 'text-gray-600'}`}>
-                                                        <Clock className="w-4 h-4" /> {daysLeft}j restants
+                                                    <span className={`flex items-center gap-1.5 text-xs sm:text-sm ${daysLeft <= 7 ? 'text-red-600' : 'text-gray-600'}`}>
+                                                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" /> {daysLeft}j restants
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="flex flex-col gap-2 min-w-[140px]">
+                                        <div className="flex flex-row sm:flex-col gap-2 sm:min-w-[140px]">
                                             <button 
                                                 onClick={() => navigate(`/listing/${listing.id}`)}
-                                                className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center gap-2"
+                                                className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center gap-2"
                                             >
-                                                <Eye className="w-4 h-4" /> Voir
+                                                <Eye className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Voir</span>
                                             </button>
                                             <button 
                                                 onClick={() => openEditModal(listing)}
-                                                className="px-3 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center gap-2"
+                                                className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center gap-2"
                                             >
-                                                <Settings className="w-4 h-4" /> Modifier
+                                                <Settings className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Modifier</span>
                                             </button>
                                             {listing.status === 'expired' && (
                                                 <button 
                                                     onClick={() => handleRenew(listing)}
-                                                    className="px-3 py-2 text-sm bg-green-50 hover:bg-green-100 text-green-600 rounded-lg flex items-center justify-center gap-2"
+                                                    className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm bg-green-50 hover:bg-green-100 text-green-600 rounded-lg flex items-center justify-center gap-2"
                                                 >
-                                                    <ArrowRight className="w-4 h-4" /> Renouveler
+                                                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Renouveler</span>
                                                 </button>
                                             )}
                                             {listing.status === 'active' && (
                                                 <button 
                                                     onClick={() => handleMarkAsSold(listing)}
-                                                    className="px-3 py-2 text-sm bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center gap-2"
+                                                    className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center gap-2"
                                                 >
-                                                    <CheckCheck className="w-4 h-4" /> Marquer vendu
+                                                    <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Marquer vendu</span>
                                                 </button>
                                             )}
                                             <button 
                                                 onClick={() => { setSelectedListing(listing); setShowDeleteModal(true); }}
-                                                className="px-3 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg flex items-center justify-center gap-2"
+                                                className="flex-1 sm:flex-none px-3 py-2 text-xs sm:text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg flex items-center justify-center gap-2"
                                             >
-                                                <Trash2 className="w-4 h-4" /> Supprimer
+                                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Supprimer</span>
                                             </button>
                                         </div>
                                     </div>
@@ -3444,13 +3523,13 @@ function MyListingsPage() {
                         })}
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                        <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucune annonce</h3>
-                        <p className="text-gray-500 mb-4">Vous n'avez pas encore d'annonces dans cette catégorie</p>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 sm:p-12 text-center">
+                        <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4" />
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Aucune annonce</h3>
+                        <p className="text-sm sm:text-base text-gray-500 mb-4">Vous n'avez pas encore d'annonces dans cette catégorie</p>
                         <button 
                             onClick={() => navigate('/publish')}
-                            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium"
+                            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm sm:text-base"
                         >
                             Créer une annonce
                         </button>
@@ -3461,24 +3540,24 @@ function MyListingsPage() {
             {/* Delete Modal */}
             {showDeleteModal && selectedListing && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full p-6">
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Trash2 className="w-8 h-8 text-red-600" />
+                    <div className="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                <Trash2 className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900 mb-2">Supprimer l'annonce ?</h2>
-                            <p className="text-gray-500">"{selectedListing.title}" sera définitivement supprimée.</p>
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Supprimer l'annonce ?</h2>
+                            <p className="text-sm sm:text-base text-gray-500">"{selectedListing.title}" sera définitivement supprimée.</p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button 
                                 onClick={() => setShowDeleteModal(false)}
-                                className="flex-1 py-3 border border-gray-200 rounded-lg font-medium hover:bg-gray-50"
+                                className="flex-1 py-2.5 sm:py-3 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 text-sm sm:text-base"
                             >
                                 Annuler
                             </button>
                             <button 
                                 onClick={handleDelete}
-                                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                                className="flex-1 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm sm:text-base"
                             >
                                 Supprimer
                             </button>
@@ -3490,53 +3569,53 @@ function MyListingsPage() {
             {/* Edit Modal */}
             {showEditModal && selectedListing && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                            <h2 className="text-lg font-semibold text-gray-900">Modifier l'annonce</h2>
+                    <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100">
+                            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Modifier l'annonce</h2>
                             <button onClick={() => setShowEditModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                                <X className="w-5 h-5 text-gray-500" />
+                                <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="flex gap-4 mb-4">
-                                <img src={selectedListing.image} alt="" className="w-20 h-20 rounded-lg object-cover" />
+                        <div className="p-4 sm:p-6 space-y-4">
+                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+                                <img src={selectedListing.image} alt="" className="w-full sm:w-20 h-32 sm:h-20 rounded-lg object-cover" />
                                 <div className="flex-1">
-                                    <p className="text-sm text-gray-500">ID: #{selectedListing.id}</p>
-                                    <p className="text-sm text-gray-500">Créée le: {selectedListing.createdAt}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500">ID: #{selectedListing.id}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500">Créée le: {selectedListing.createdAt}</p>
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Titre</label>
                                 <input 
                                     type="text"
                                     value={editForm.title}
                                     onChange={(e) => setEditForm({...editForm, title: e.target.value})}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA)</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Prix (FCFA)</label>
                                 <input 
                                     type="number"
                                     value={editForm.price}
                                     onChange={(e) => setEditForm({...editForm, price: e.target.value})}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 />
                             </div>
-                            <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
-                                <p className="flex items-center gap-2"><Info className="w-4 h-4" /> Pour modifier les images ou la description, utilisez l'éditeur complet.</p>
+                            <div className="bg-blue-50 rounded-lg p-3 text-xs sm:text-sm text-blue-700">
+                                <p className="flex items-center gap-2"><Info className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Pour modifier les images ou la description, utilisez l'éditeur complet.</span></p>
                             </div>
                         </div>
-                        <div className="flex gap-3 p-4 border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row gap-3 p-3 sm:p-4 border-t border-gray-100">
                             <button 
                                 onClick={() => setShowEditModal(false)}
-                                className="flex-1 py-3 border border-gray-200 rounded-lg font-medium hover:bg-gray-50"
+                                className="flex-1 py-2.5 sm:py-3 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 text-sm sm:text-base"
                             >
                                 Annuler
                             </button>
                             <button 
                                 onClick={handleEdit}
-                                className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium"
+                                className="flex-1 py-2.5 sm:py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm sm:text-base"
                             >
                                 Enregistrer
                             </button>
@@ -3643,6 +3722,44 @@ function MyReservationsPage() {
                 ? { available: true } 
                 : { available: false, blocked: true }
         }));
+    };
+
+    // Gestionnaires d'événements pour les boutons
+    const handleContactOwner = (reservation) => {
+        alert(`Contacter le propriétaire: ${reservation.owner}\n\nCette fonctionnalité ouvrira la messagerie.`);
+    };
+
+    const handleCancelReservation = (reservation) => {
+        if (window.confirm(`Êtes-vous sûr de vouloir annuler la réservation pour "${reservation.listing}" ?`)) {
+            alert(`Réservation annulée avec succès.`);
+            // Ici, on pourrait mettre à jour l'état ou appeler une API
+        }
+    };
+
+    const handlePayReservation = (reservation) => {
+        alert(`Paiement de la réservation pour "${reservation.listing}"\n\nMontant: ${reservation.amount.toLocaleString()} FCFA\n\nVous serez redirigé vers la page de paiement.`);
+        // Ici, on pourrait rediriger vers la page de paiement
+        // navigate(`/payment/${reservation.id}`);
+    };
+
+    const handleAcceptReservation = (reservation) => {
+        if (window.confirm(`Accepter la demande de réservation de ${reservation.guest} pour "${reservation.listing}" ?`)) {
+            alert(`Demande acceptée avec succès. ${reservation.guest} sera notifié.`);
+            // Ici, on pourrait mettre à jour l'état ou appeler une API
+        }
+    };
+
+    const handleRejectReservation = (reservation) => {
+        if (window.confirm(`Refuser la demande de réservation de ${reservation.guest} pour "${reservation.listing}" ?`)) {
+            alert(`Demande refusée. ${reservation.guest} sera notifié.`);
+            // Ici, on pourrait mettre à jour l'état ou appeler une API
+        }
+    };
+
+    const handleViewDetails = (reservation) => {
+        alert(`Détails de la réservation pour "${reservation.listing}"\n\nClient: ${reservation.guest}\nDates: ${reservation.startDate} - ${reservation.endDate}\nMontant: ${reservation.amount.toLocaleString()} FCFA`);
+        // Ici, on pourrait rediriger vers une page de détails
+        // navigate(`/reservations/${reservation.id}`);
     };
 
     const filteredClientReservations = clientReservations.filter(r => 
@@ -3759,16 +3876,25 @@ function MyReservationsPage() {
                                                 <span className="text-sm text-gray-600">Propriétaire: <strong>{res.owner}</strong></span>
                                                 
                                                 <div className="ml-auto flex gap-2">
-                                                    <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 flex items-center gap-1">
+                                                    <button 
+                                                        onClick={() => handleContactOwner(res)}
+                                                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 flex items-center gap-1"
+                                                    >
                                                         <MessageSquare className="w-4 h-4" /> Contacter
                                                     </button>
                                                     {res.status === 'pending' && (
-                                                        <button className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100">
+                                                        <button 
+                                                            onClick={() => handleCancelReservation(res)}
+                                                            className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100"
+                                                        >
                                                             Annuler
                                                         </button>
                                                     )}
                                                     {res.status === 'confirmed' && (
-                                                        <button className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 flex items-center gap-1">
+                                                        <button 
+                                                            onClick={() => handlePayReservation(res)}
+                                                            className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 flex items-center gap-1"
+                                                        >
                                                             <CreditCard className="w-4 h-4" /> Payer
                                                         </button>
                                                     )}
@@ -3912,16 +4038,25 @@ function MyReservationsPage() {
                                                     <div className="ml-auto flex gap-2">
                                                         {res.status === 'pending' && (
                                                             <>
-                                                                <button className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100">
+                                                                <button 
+                                                                    onClick={() => handleRejectReservation(res)}
+                                                                    className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100"
+                                                                >
                                                                     Refuser
                                                                 </button>
-                                                                <button className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 flex items-center gap-1">
+                                                                <button 
+                                                                    onClick={() => handleAcceptReservation(res)}
+                                                                    className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 flex items-center gap-1"
+                                                                >
                                                                     <Check className="w-4 h-4" /> Accepter
                                                                 </button>
                                                             </>
                                                         )}
                                                         {res.status === 'confirmed' && (
-                                                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1">
+                                                            <button 
+                                                                onClick={() => handleViewDetails(res)}
+                                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1"
+                                                            >
                                                                 <Eye className="w-4 h-4" /> Voir détails
                                                             </button>
                                                         )}
@@ -6026,7 +6161,7 @@ function AuthPage() {
             alert('Les mots de passe ne correspondent pas');
             return;
         }
-        alert(mode === 'login' ? 'Connexion réussie!' : 'Compte créé avec succès!');
+        alert(mode === 'login' ? 'Connexion réussie !' : 'Compte créé avec succès !');
         navigate('/');
     };
 
@@ -6043,9 +6178,9 @@ function AuthPage() {
 
                         {/* Title */}
                         <div className="text-center mb-8">
-                            <h1 className="text-2xl font-bold text-gray-900">Welcome to</h1>
+                            <h1 className="text-2xl font-bold text-gray-900">Bienvenue sur</h1>
                             <h2 className="text-2xl font-bold text-gray-900">PlanB</h2>
-                            <p className="text-gray-500 mt-2">Sign in to continue</p>
+                            <p className="text-gray-500 mt-2">Connectez-vous pour continuer</p>
                         </div>
 
                         {/* Google Button */}
@@ -6056,13 +6191,13 @@ function AuthPage() {
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                             </svg>
-                            Continue with Google
+                            Continuer avec Google
                         </button>
 
                         {/* Divider */}
                         <div className="flex items-center gap-4 mb-6">
                             <div className="flex-1 h-px bg-gray-200"></div>
-                            <span className="text-sm text-gray-400">OR</span>
+                            <span className="text-sm text-gray-400">OU</span>
                             <div className="flex-1 h-px bg-gray-200"></div>
                         </div>
 
@@ -6076,7 +6211,7 @@ function AuthPage() {
                                         type="email"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        placeholder="you@example.com"
+                                        placeholder="votre@email.com"
                                         className="w-full pl-10 pr-4 py-3 border-b border-gray-200 focus:border-blue-500 focus:outline-none transition-colors bg-transparent"
                                     />
                                 </div>
@@ -6084,7 +6219,7 @@ function AuthPage() {
 
                             {/* Password */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 text-center mb-2">Password</label>
+                                <label className="block text-sm font-medium text-gray-700 text-center mb-2">Mot de passe</label>
                                 <div className="relative">
                                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                     <input
@@ -6109,18 +6244,18 @@ function AuthPage() {
                                 type="submit"
                                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-6"
                             >
-                                Sign In
+                                Se connecter
                             </button>
                         </form>
 
                         {/* Footer Links */}
                         <div className="flex justify-between mt-6 text-sm">
-                            <button className="text-gray-500 hover:text-gray-700">Forgot password?</button>
+                            <button className="text-gray-500 hover:text-gray-700">Mot de passe oublié ?</button>
                             <button 
                                 onClick={() => setMode('register')}
                                 className="text-gray-500 hover:text-gray-700"
                             >
-                                Need an account? <span className="font-semibold text-gray-900">Sign up</span>
+                                Pas encore de compte ? <span className="font-semibold text-gray-900">S'inscrire</span>
                             </button>
                         </div>
                     </div>
@@ -6135,11 +6270,11 @@ function AuthPage() {
                             className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm"
                         >
                             <ChevronLeft className="w-4 h-4" />
-                            Back to sign in
+                            Retour à la connexion
                         </button>
 
                         {/* Title */}
-                        <h1 className="text-2xl font-bold text-gray-900 text-center mb-8">Create your account</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 text-center mb-8">Créer votre compte</h1>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Email */}
@@ -6151,7 +6286,7 @@ function AuthPage() {
                                         type="email"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        placeholder="you@example.com"
+                                        placeholder="votre@email.com"
                                         className="w-full pl-10 pr-4 py-3 border-b border-gray-200 focus:border-blue-500 focus:outline-none transition-colors bg-transparent"
                                     />
                                 </div>
@@ -6159,14 +6294,14 @@ function AuthPage() {
 
                             {/* Password */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 text-center mb-2">Password</label>
+                                <label className="block text-sm font-medium text-gray-700 text-center mb-2">Mot de passe</label>
                                 <div className="relative">
                                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={formData.password}
                                         onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                        placeholder="Min. 8 characters"
+                                        placeholder="Min. 8 caractères"
                                         className="w-full pl-10 pr-10 py-3 border-b border-gray-200 focus:border-blue-500 focus:outline-none transition-colors bg-transparent"
                                     />
                                     <button
@@ -6181,14 +6316,14 @@ function AuthPage() {
 
                             {/* Confirm Password */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 text-center mb-2">Confirm Password</label>
+                                <label className="block text-sm font-medium text-gray-700 text-center mb-2">Confirmer le mot de passe</label>
                                 <div className="relative">
                                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                     <input
                                         type={showConfirmPassword ? "text" : "password"}
                                         value={formData.confirmPassword}
                                         onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                        placeholder="Re-enter password"
+                                        placeholder="Ressaisir le mot de passe"
                                         className="w-full pl-10 pr-10 py-3 border-b border-gray-200 focus:border-blue-500 focus:outline-none transition-colors bg-transparent"
                                     />
                                     <button
@@ -6206,7 +6341,7 @@ function AuthPage() {
                                 type="submit"
                                 className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-6"
                             >
-                                Create account
+                                Créer un compte
                             </button>
                         </form>
                     </div>
@@ -6927,118 +7062,150 @@ function AdminPage() {
         { id: 'stats', label: 'Statistiques', icon: TrendingUp },
     ];
 
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
     return (
-        <div className="min-h-screen bg-gray-100 pt-16">
+        <div className="min-h-screen bg-gray-100">
             <div className="flex">
+                {/* Sidebar Overlay Mobile */}
+                {sidebarOpen && (
+                    <div 
+                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )}
+
                 {/* Sidebar */}
-                <div className="w-64 bg-gray-900 min-h-screen fixed left-0 top-16 pt-6">
+                <div className={`w-64 bg-gray-900 min-h-screen fixed left-0 top-0 pt-4 z-50 transform transition-transform lg:translate-x-0 ${
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                }`}>
                     <div className="px-4 mb-6">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                            Retour au site
-                        </button>
-                        <h2 className="text-white text-xl font-bold flex items-center gap-2">
-                            <Shield className="w-6 h-6 text-orange-500" />
-                            Admin Panel
+                        <div className="flex items-center justify-between mb-4">
+                            <button
+                                onClick={() => navigate('/')}
+                                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                                <span className="hidden sm:inline">Retour au site</span>
+                            </button>
+                            <button
+                                onClick={() => setSidebarOpen(false)}
+                                className="lg:hidden text-gray-400 hover:text-white"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <h2 className="text-white text-lg sm:text-xl font-bold flex items-center gap-2">
+                            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
+                            <span className="hidden sm:inline">Admin Panel</span>
+                            <span className="sm:hidden">Admin</span>
                         </h2>
                     </div>
                     <nav className="space-y-1 px-2">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg text-left transition-colors ${
                                     activeTab === tab.id 
                                         ? 'bg-orange-500 text-white' 
                                         : 'text-gray-300 hover:bg-gray-800'
                                 }`}
                             >
                                 <tab.icon className="w-5 h-5" />
-                                {tab.label}
+                                <span className="text-sm sm:text-base">{tab.label}</span>
                             </button>
                         ))}
                     </nav>
                 </div>
 
                 {/* Main Content */}
-                <div className="ml-64 flex-1 p-8">
+                <div className="w-full lg:ml-64 flex-1 p-4 sm:p-6 lg:p-8 pt-4 sm:pt-6 lg:pt-8">
+                    {/* Mobile Menu Button */}
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="lg:hidden mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200"
+                    >
+                        <Menu className="w-6 h-6 text-gray-700" />
+                    </button>
+
                     {/* Dashboard Tab */}
                     {activeTab === 'dashboard' && (
-                        <div className="space-y-6">
-                            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                        <div className="space-y-4 sm:space-y-6">
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
                             
                             {/* Stats Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
                                     <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Total Utilisateurs</p>
-                                            <p className="text-3xl font-bold text-gray-900">{dashboard.users.total}</p>
-                                            <p className="text-sm text-green-600 mt-1">+{dashboard.users.newThisMonth} ce mois</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs sm:text-sm text-gray-500">Total Utilisateurs</p>
+                                            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{dashboard.users.total}</p>
+                                            <p className="text-xs sm:text-sm text-green-600 mt-1">+{dashboard.users.newThisMonth} ce mois</p>
                                         </div>
-                                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <Users className="w-6 h-6 text-blue-600" />
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
+                                            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                                         </div>
                                     </div>
-                                    <div className="mt-4 flex gap-4 text-sm">
+                                    <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
                                         <span className="text-gray-500">FREE: <strong>{dashboard.users.free}</strong></span>
                                         <span className="text-orange-500">PRO: <strong>{dashboard.users.pro}</strong></span>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
                                     <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Total Annonces</p>
-                                            <p className="text-3xl font-bold text-gray-900">{dashboard.listings.total}</p>
-                                            <p className="text-sm text-green-600 mt-1">+{dashboard.listings.newThisMonth} ce mois</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs sm:text-sm text-gray-500">Total Annonces</p>
+                                            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{dashboard.listings.total}</p>
+                                            <p className="text-xs sm:text-sm text-green-600 mt-1">+{dashboard.listings.newThisMonth} ce mois</p>
                                         </div>
-                                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                            <FileText className="w-6 h-6 text-green-600" />
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
+                                            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                                         </div>
                                     </div>
-                                    <div className="mt-4 flex gap-3 text-sm">
+                                    <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm">
                                         <span className="text-green-600">Actives: <strong>{dashboard.listings.active}</strong></span>
                                         <span className="text-yellow-600">Brouillon: <strong>{dashboard.listings.draft}</strong></span>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
                                     <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Paiements</p>
-                                            <p className="text-3xl font-bold text-gray-900">{dashboard.payments.total}</p>
-                                            <p className="text-sm text-yellow-600 mt-1">{dashboard.payments.pending} en attente</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs sm:text-sm text-gray-500">Paiements</p>
+                                            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{dashboard.payments.total}</p>
+                                            <p className="text-xs sm:text-sm text-yellow-600 mt-1">{dashboard.payments.pending} en attente</p>
                                         </div>
-                                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                            <CreditCard className="w-6 h-6 text-purple-600" />
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
+                                            <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                                         </div>
                                     </div>
-                                    <div className="mt-4 text-sm">
+                                    <div className="mt-3 sm:mt-4 text-xs sm:text-sm">
                                         <span className="text-green-600">Complétés: <strong>{dashboard.payments.completed}</strong></span>
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
                                     <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Revenus Totaux</p>
-                                            <p className="text-3xl font-bold text-orange-500">{formatPrice(dashboard.revenue.total)}</p>
-                                            <p className="text-sm text-gray-500 mt-1">FCFA</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs sm:text-sm text-gray-500">Revenus Totaux</p>
+                                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-500 truncate">{formatPrice(dashboard.revenue.total)}</p>
+                                            <p className="text-xs sm:text-sm text-gray-500 mt-1">FCFA</p>
                                         </div>
-                                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                                            <Banknote className="w-6 h-6 text-orange-600" />
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
+                                            <Banknote className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Recent Activity */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                         <Users className="w-5 h-5 text-blue-500" />
                                         Derniers Utilisateurs
@@ -7065,26 +7232,28 @@ function AdminPage() {
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                                        Paiements en Attente
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
+                                        <span className="text-sm sm:text-base">Paiements en Attente</span>
                                     </h3>
                                     {mockPendingPayments.length > 0 ? (
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 sm:space-y-3">
                                             {mockPendingPayments.map(payment => (
-                                                <div key={payment.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                                                    <div>
-                                                        <p className="font-medium text-gray-900">{payment.user.fullName}</p>
-                                                        <p className="text-sm text-gray-500">{payment.description}</p>
+                                                <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium text-sm sm:text-base text-gray-900 truncate">{payment.user.fullName}</p>
+                                                        <p className="text-xs sm:text-sm text-gray-500 truncate">{payment.description}</p>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className="font-bold text-orange-500">{formatPrice(payment.amount)} FCFA</p>
-                                                        <div className="flex gap-2 mt-1">
-                                                            <button className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">
+                                                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
+                                                        <div className="text-left sm:text-right">
+                                                            <p className="font-bold text-orange-500 text-sm sm:text-base">{formatPrice(payment.amount)} FCFA</p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center">
                                                                 <Check className="w-3 h-3" />
                                                             </button>
-                                                            <button className="text-xs px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                                                            <button className="text-xs px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center justify-center">
                                                                 <X className="w-3 h-3" />
                                                             </button>
                                                         </div>
@@ -7093,7 +7262,7 @@ function AdminPage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-gray-500 text-center py-8">Aucun paiement en attente</p>
+                                        <p className="text-gray-500 text-center py-6 sm:py-8 text-sm sm:text-base">Aucun paiement en attente</p>
                                     )}
                                 </div>
                             </div>
@@ -7102,30 +7271,30 @@ function AdminPage() {
 
                     {/* Users Tab */}
                     {activeTab === 'users' && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h1 className="text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
-                                <span className="text-sm text-gray-500">{filteredUsers.length} utilisateur(s)</span>
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
+                                <span className="text-xs sm:text-sm text-gray-500">{filteredUsers.length} utilisateur(s)</span>
                             </div>
 
                             {/* Filters */}
-                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-wrap gap-4">
-                                <div className="flex-1 min-w-[200px]">
+                            <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                <div className="flex-1 w-full">
                                     <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                                         <input
                                             type="text"
                                             placeholder="Rechercher par email, nom ou téléphone..."
                                             value={searchUser}
                                             onChange={(e) => setSearchUser(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                            className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                         />
                                     </div>
                                 </div>
                                 <select
                                     value={filterAccountType}
                                     onChange={(e) => setFilterAccountType(e.target.value)}
-                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 >
                                     <option value="all">Tous les comptes</option>
                                     <option value="FREE">FREE</option>
@@ -7133,39 +7302,39 @@ function AdminPage() {
                                 </select>
                             </div>
 
-                            {/* Users Table */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            {/* Users Table - Desktop */}
+                            <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Utilisateur</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Compte</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annonces</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inscrit le</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Utilisateur</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Compte</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annonces</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inscrit le</th>
+                                            <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredUsers.map(user => (
                                             <tr key={user.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 lg:px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                                                        <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                                                             {user.fullName.charAt(0)}
                                                         </div>
-                                                        <div>
-                                                            <p className="font-medium text-gray-900">{user.fullName}</p>
-                                                            <p className="text-sm text-gray-500">{user.city}, {user.country}</p>
+                                                        <div className="min-w-0">
+                                                            <p className="font-medium text-gray-900 truncate">{user.fullName}</p>
+                                                            <p className="text-xs sm:text-sm text-gray-500 truncate">{user.city}, {user.country}</p>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm text-gray-900">{user.email}</p>
-                                                    <p className="text-sm text-gray-500">{user.phone}</p>
+                                                <td className="px-4 lg:px-6 py-4">
+                                                    <p className="text-xs sm:text-sm text-gray-900 truncate">{user.email}</p>
+                                                    <p className="text-xs sm:text-sm text-gray-500 truncate">{user.phone}</p>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
+                                                <td className="px-4 lg:px-6 py-4">
+                                                    <div className="flex flex-wrap items-center gap-2">
                                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                                                             user.accountType === 'PRO' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
                                                         }`}>
@@ -7181,13 +7350,13 @@ function AdminPage() {
                                                         <p className="text-xs text-gray-500 mt-1">Expire: {user.subscriptionExpiresAt}</p>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 lg:px-6 py-4">
                                                     <span className="font-medium text-gray-900">{user.totalListings}</span>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500">
+                                                <td className="px-4 lg:px-6 py-4 text-xs sm:text-sm text-gray-500">
                                                     {user.createdAt}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 lg:px-6 py-4">
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             onClick={() => { setSelectedUser(user); setShowUserModal(true); }}
@@ -7221,35 +7390,119 @@ function AdminPage() {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Users Cards - Mobile */}
+                            <div className="lg:hidden space-y-3">
+                                {filteredUsers.map(user => (
+                                    <div key={user.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                                                    {user.fullName.charAt(0)}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium text-gray-900 truncate">{user.fullName}</p>
+                                                    <p className="text-xs text-gray-500 truncate">{user.city}, {user.country}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1 flex-shrink-0">
+                                                <button
+                                                    onClick={() => { setSelectedUser(user); setShowUserModal(true); }}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                    title="Voir détails"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                {!user.isLifetimePro && (
+                                                    <button
+                                                        onClick={() => alert(`PRO illimité activé pour ${user.fullName}`)}
+                                                        className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg"
+                                                        title="Donner PRO illimité"
+                                                    >
+                                                        <Star className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {user.isLifetimePro && (
+                                                    <button
+                                                        onClick={() => alert(`PRO illimité retiré pour ${user.fullName}`)}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                                        title="Retirer PRO illimité"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 text-sm">
+                                            <div>
+                                                <p className="text-xs text-gray-500">Email</p>
+                                                <p className="text-gray-900 truncate">{user.email}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Téléphone</p>
+                                                <p className="text-gray-900">{user.phone}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs text-gray-500">Compte</p>
+                                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                                            user.accountType === 'PRO' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            {user.accountType}
+                                                        </span>
+                                                        {user.isLifetimePro && (
+                                                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-600">
+                                                                ILLIMITÉ
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {user.subscriptionExpiresAt && (
+                                                        <p className="text-xs text-gray-500 mt-1">Expire: {user.subscriptionExpiresAt}</p>
+                                                    )}
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-500">Annonces</p>
+                                                    <p className="font-medium text-gray-900">{user.totalListings}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Inscrit le</p>
+                                                <p className="text-gray-900">{user.createdAt}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
                     {/* Listings Tab */}
                     {activeTab === 'listings' && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h1 className="text-2xl font-bold text-gray-900">Modération des Annonces</h1>
-                                <span className="text-sm text-gray-500">{filteredListings.length} annonce(s)</span>
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Modération des Annonces</h1>
+                                <span className="text-xs sm:text-sm text-gray-500">{filteredListings.length} annonce(s)</span>
                             </div>
 
                             {/* Filters */}
-                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-wrap gap-4">
-                                <div className="flex-1 min-w-[200px]">
+                            <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                <div className="flex-1 w-full">
                                     <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                                         <input
                                             type="text"
                                             placeholder="Rechercher une annonce..."
                                             value={searchListing}
                                             onChange={(e) => setSearchListing(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                            className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                         />
                                     </div>
                                 </div>
                                 <select
                                     value={filterListingStatus}
                                     onChange={(e) => setFilterListingStatus(e.target.value)}
-                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 >
                                     <option value="all">Tous les statuts</option>
                                     <option value="active">Actives</option>
@@ -7259,40 +7512,40 @@ function AdminPage() {
                                 </select>
                             </div>
 
-                            {/* Listings Table */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            {/* Listings Table - Desktop */}
+                            <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annonce</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendeur</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vues</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annonce</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendeur</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                            <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vues</th>
+                                            <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredListings.map(listing => (
                                             <tr key={listing.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4">
-                                                    <div>
-                                                        <p className="font-medium text-gray-900">{listing.title}</p>
-                                                        <p className="text-sm text-gray-500">{listing.category} • {listing.city}</p>
+                                                <td className="px-4 lg:px-6 py-4">
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-gray-900 truncate">{listing.title}</p>
+                                                        <p className="text-xs sm:text-sm text-gray-500 truncate">{listing.category} • {listing.city}</p>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="font-bold text-orange-500">{formatPrice(listing.price)} FCFA</p>
+                                                <td className="px-4 lg:px-6 py-4">
+                                                    <p className="font-bold text-orange-500 text-sm sm:text-base">{formatPrice(listing.price)} FCFA</p>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm text-gray-900">{listing.user.email}</p>
-                                                    <span className={`text-xs px-2 py-0.5 rounded ${
+                                                <td className="px-4 lg:px-6 py-4">
+                                                    <p className="text-xs sm:text-sm text-gray-900 truncate">{listing.user.email}</p>
+                                                    <span className={`text-xs px-2 py-0.5 rounded mt-1 inline-block ${
                                                         listing.user.accountType === 'PRO' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
                                                     }`}>
                                                         {listing.user.accountType}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 lg:px-6 py-4">
                                                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                                                         listing.status === 'active' ? 'bg-green-100 text-green-600' :
                                                         listing.status === 'draft' ? 'bg-yellow-100 text-yellow-600' :
@@ -7302,12 +7555,12 @@ function AdminPage() {
                                                         {listing.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="flex items-center gap-1 text-gray-600">
+                                                <td className="px-4 lg:px-6 py-4">
+                                                    <span className="flex items-center gap-1 text-gray-600 text-sm">
                                                         <Eye className="w-4 h-4" /> {listing.viewsCount}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 lg:px-6 py-4">
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             onClick={() => navigate(`/listing/${listing.id}`)}
@@ -7334,78 +7587,148 @@ function AdminPage() {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Listings Cards - Mobile */}
+                            <div className="lg:hidden space-y-3">
+                                {filteredListings.map(listing => (
+                                    <div key={listing.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-gray-900 mb-1">{listing.title}</p>
+                                                <p className="text-xs text-gray-500">{listing.category} • {listing.city}</p>
+                                            </div>
+                                            <div className="flex gap-1 flex-shrink-0">
+                                                <button
+                                                    onClick={() => navigate(`/listing/${listing.id}`)}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                    title="Voir"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm(`Supprimer l'annonce "${listing.title}" ?`)) {
+                                                            alert('Annonce supprimée');
+                                                        }
+                                                    }}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                                    title="Supprimer"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs text-gray-500">Prix</p>
+                                                    <p className="font-bold text-orange-500 text-lg">{formatPrice(listing.price)} FCFA</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-500">Vues</p>
+                                                    <span className="flex items-center gap-1 text-gray-600 text-sm">
+                                                        <Eye className="w-4 h-4" /> {listing.viewsCount}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Vendeur</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <p className="text-sm text-gray-900 truncate flex-1">{listing.user.email}</p>
+                                                    <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${
+                                                        listing.user.accountType === 'PRO' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
+                                                    }`}>
+                                                        {listing.user.accountType}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Statut</p>
+                                                <span className={`inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full ${
+                                                    listing.status === 'active' ? 'bg-green-100 text-green-600' :
+                                                    listing.status === 'draft' ? 'bg-yellow-100 text-yellow-600' :
+                                                    listing.status === 'expired' ? 'bg-red-100 text-red-600' :
+                                                    'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                    {listing.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
                     {/* Payments Tab */}
                     {activeTab === 'payments' && (
-                        <div className="space-y-6">
-                            <h1 className="text-2xl font-bold text-gray-900">Gestion des Paiements</h1>
+                        <div className="space-y-4 sm:space-y-6">
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion des Paiements</h1>
 
                             {/* Pending Payments */}
-                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <Clock className="w-5 h-5 text-yellow-500" />
-                                    Paiements en attente de vérification
+                            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
+                                    <span className="text-sm sm:text-base">Paiements en attente de vérification</span>
                                 </h3>
                                 {mockPendingPayments.length > 0 ? (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3 sm:space-y-4">
                                         {mockPendingPayments.map(payment => (
-                                            <div key={payment.id} className="flex items-center justify-between p-4 bg-yellow-50 rounded-xl border border-yellow-100">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-yellow-200 rounded-full flex items-center justify-center">
-                                                        <CreditCard className="w-6 h-6 text-yellow-700" />
+                                            <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-yellow-50 rounded-lg sm:rounded-xl border border-yellow-100">
+                                                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-700" />
                                                     </div>
-                                                    <div>
-                                                        <p className="font-semibold text-gray-900">{payment.user.fullName}</p>
-                                                        <p className="text-sm text-gray-600">{payment.user.email}</p>
-                                                        <p className="text-sm text-gray-500">{payment.user.phone}</p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-semibold text-sm sm:text-base text-gray-900 truncate">{payment.user.fullName}</p>
+                                                        <p className="text-xs sm:text-sm text-gray-600 truncate">{payment.user.email}</p>
+                                                        <p className="text-xs sm:text-sm text-gray-500 truncate">{payment.user.phone}</p>
                                                     </div>
                                                 </div>
-                                                <div className="text-center">
-                                                    <p className="text-sm text-gray-500">{payment.description}</p>
-                                                    <p className="text-2xl font-bold text-orange-500">{formatPrice(payment.amount)} FCFA</p>
+                                                <div className="text-center sm:text-center flex-shrink-0">
+                                                    <p className="text-xs sm:text-sm text-gray-500">{payment.description}</p>
+                                                    <p className="text-xl sm:text-2xl font-bold text-orange-500">{formatPrice(payment.amount)} FCFA</p>
                                                     <p className="text-xs text-gray-400">{payment.createdAt}</p>
                                                 </div>
-                                                <div className="flex flex-col gap-2">
+                                                <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
                                                     <button 
                                                         onClick={() => alert(`Paiement #${payment.id} confirmé ! ${payment.user.fullName} est maintenant PRO.`)}
-                                                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
+                                                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center justify-center gap-2 text-sm sm:text-base"
                                                     >
-                                                        <Check className="w-4 h-4" /> Confirmer
+                                                        <Check className="w-4 h-4" /> <span>Confirmer</span>
                                                     </button>
                                                     <button 
                                                         onClick={() => alert(`Paiement #${payment.id} rejeté.`)}
-                                                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                                                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center gap-2 text-sm sm:text-base"
                                                     >
-                                                        <X className="w-4 h-4" /> Rejeter
+                                                        <X className="w-4 h-4" /> <span>Rejeter</span>
                                                     </button>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-12 text-gray-500">
-                                        <Check className="w-16 h-16 mx-auto mb-4 text-green-300" />
-                                        <p className="text-lg">Aucun paiement en attente</p>
-                                        <p className="text-sm">Tous les paiements ont été traités</p>
+                                    <div className="text-center py-8 sm:py-12 text-gray-500">
+                                        <Check className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-green-300" />
+                                        <p className="text-base sm:text-lg">Aucun paiement en attente</p>
+                                        <p className="text-xs sm:text-sm">Tous les paiements ont été traités</p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Revenue Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                    <p className="text-sm text-gray-500">Revenus ce mois</p>
-                                    <p className="text-3xl font-bold text-green-500">{formatPrice(850000)} FCFA</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                                    <p className="text-xs sm:text-sm text-gray-500">Revenus ce mois</p>
+                                    <p className="text-2xl sm:text-3xl font-bold text-green-500">{formatPrice(850000)} FCFA</p>
                                 </div>
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                    <p className="text-sm text-gray-500">Revenus mois dernier</p>
-                                    <p className="text-3xl font-bold text-gray-700">{formatPrice(720000)} FCFA</p>
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                                    <p className="text-xs sm:text-sm text-gray-500">Revenus mois dernier</p>
+                                    <p className="text-2xl sm:text-3xl font-bold text-gray-700">{formatPrice(720000)} FCFA</p>
                                 </div>
-                                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                    <p className="text-sm text-gray-500">Revenus totaux</p>
-                                    <p className="text-3xl font-bold text-orange-500">{formatPrice(dashboard.revenue.total)} FCFA</p>
+                                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                                    <p className="text-xs sm:text-sm text-gray-500">Revenus totaux</p>
+                                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-500 truncate">{formatPrice(dashboard.revenue.total)} FCFA</p>
                                 </div>
                             </div>
                         </div>
@@ -7601,73 +7924,175 @@ function AboutPage() {
             {/* Hero */}
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-4">Qui sommes-nous ?</h1>
-                    <p className="text-white/90 text-lg">Découvrez l'histoire de PlanB, la première plateforme de petites annonces pour l'Afrique</p>
+                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Qui sommes-nous ?</h1>
+                    <p className="text-white/90 text-lg md:text-xl">Découvrez l'histoire de PlanB, la première plateforme de petites annonces pour l'Afrique</p>
                 </div>
             </div>
 
             <div className="max-w-4xl mx-auto px-4 py-12">
+                {/* Notre Histoire */}
+                <section className="mb-12">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-6">Notre Histoire</h2>
+                    <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
+                        <p className="text-gray-700 leading-relaxed mb-4">
+                            PlanB est née en 2026 d'une vision ambitieuse : démocratiser l'accès aux petites annonces en Afrique. 
+                            Face au manque de plateformes adaptées aux réalités locales et aux besoins spécifiques du continent, 
+                            nous avons créé une solution moderne, sécurisée et accessible à tous.
+                        </p>
+                        <p className="text-gray-700 leading-relaxed mb-4">
+                            Notre équipe, composée de développeurs, designers et entrepreneurs passionnés par l'Afrique, 
+                            travaille quotidiennement pour offrir une expérience utilisateur exceptionnelle. Nous comprenons 
+                            les défis uniques du marché africain et nous adaptons constamment nos services pour répondre 
+                            aux besoins de nos utilisateurs.
+                        </p>
+                        <p className="text-gray-700 leading-relaxed">
+                            Aujourd'hui, PlanB est devenue la référence en matière de petites annonces en Afrique, 
+                            connectant des milliers d'utilisateurs à travers le continent et facilitant des milliers 
+                            de transactions chaque mois.
+                        </p>
+                    </div>
+                </section>
+
                 {/* Mission */}
                 <section className="mb-12">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Notre Mission</h2>
-                    <p className="text-gray-600 leading-relaxed mb-4">
-                        PlanB est née d'une vision simple : créer la plateforme de référence pour les petites annonces en Afrique. 
-                        Nous croyons que chaque personne mérite un accès facile et sécurisé pour acheter, vendre ou louer des biens et services.
-                    </p>
-                    <p className="text-gray-600 leading-relaxed">
-                        Notre objectif est de connecter les vendeurs et acheteurs à travers tout le continent africain, 
-                        en offrant une expérience utilisateur moderne, intuitive et adaptée aux réalités locales.
-                    </p>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-6">Notre Mission</h2>
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 md:p-8">
+                        <p className="text-gray-800 leading-relaxed mb-4 text-lg">
+                            <strong className="text-orange-600">Notre mission est simple :</strong> créer la plateforme de référence 
+                            pour les petites annonces en Afrique, en offrant un service accessible, sécurisé et adapté aux réalités locales.
+                        </p>
+                        <p className="text-gray-700 leading-relaxed mb-4">
+                            Nous croyons fermement que chaque personne, qu'elle vive en ville ou en zone rurale, mérite un accès 
+                            facile et sécurisé pour acheter, vendre ou louer des biens et services. PlanB brise les barrières 
+                            géographiques et économiques, permettant à tous de participer à l'économie numérique.
+                        </p>
+                        <p className="text-gray-700 leading-relaxed">
+                            Notre objectif est de connecter les vendeurs et acheteurs à travers tout le continent africain, 
+                            en offrant une expérience utilisateur moderne, intuitive et adaptée aux réalités locales. Nous 
+                            intégrons les moyens de paiement mobiles populaires en Afrique, supportons plusieurs langues, 
+                            et adaptons nos fonctionnalités aux besoins spécifiques de chaque marché.
+                        </p>
+                    </div>
                 </section>
 
                 {/* Values */}
                 <section className="mb-12">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Nos Valeurs</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-8">Nos Valeurs</h2>
                     <div className="grid md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm">
-                            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
-                                <Shield className="w-6 h-6 text-orange-500" />
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+                                <Shield className="w-7 h-7 text-orange-500" />
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-2">Confiance</h3>
-                            <p className="text-gray-600 text-sm">Nous vérifions les annonces et les utilisateurs pour garantir des transactions sécurisées.</p>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Confiance & Sécurité</h3>
+                            <p className="text-gray-600 leading-relaxed">
+                                La sécurité de nos utilisateurs est notre priorité absolue. Nous vérifions les annonces, 
+                                authentifions les utilisateurs et offrons un système de paiement sécurisé. Chaque transaction 
+                                est protégée et chaque utilisateur peut signaler un comportement suspect.
+                            </p>
                         </div>
-                        <div className="bg-white p-6 rounded-2xl shadow-sm">
-                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                                <Users className="w-6 h-6 text-blue-500" />
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                                <Users className="w-7 h-7 text-blue-500" />
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-2">Communauté</h3>
-                            <p className="text-gray-600 text-sm">Nous construisons une communauté active et engagée à travers l'Afrique.</p>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Communauté</h3>
+                            <p className="text-gray-600 leading-relaxed">
+                                Nous construisons une communauté active, solidaire et engagée à travers l'Afrique. 
+                                PlanB n'est pas qu'une plateforme, c'est un espace où les utilisateurs se rencontrent, 
+                                échangent et créent des opportunités ensemble. Nous favorisons l'entraide et le respect mutuel.
+                            </p>
                         </div>
-                        <div className="bg-white p-6 rounded-2xl shadow-sm">
-                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                                <Sparkles className="w-6 h-6 text-green-500" />
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+                                <Star className="w-7 h-7 text-green-500" />
                             </div>
-                            <h3 className="font-semibold text-gray-900 mb-2">Innovation</h3>
-                            <p className="text-gray-600 text-sm">Nous innovons constamment pour offrir les meilleures fonctionnalités à nos utilisateurs.</p>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Innovation</h3>
+                            <p className="text-gray-600 leading-relaxed">
+                                Nous innovons constamment pour offrir les meilleures fonctionnalités à nos utilisateurs. 
+                                Visites virtuelles 360°, système de réservation intégré, paiements mobiles, géolocalisation 
+                                avancée : nous intégrons les dernières technologies pour améliorer votre expérience.
+                            </p>
                         </div>
                     </div>
                 </section>
 
-                {/* Stats */}
-                <section className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 text-center">
-                    <h2 className="text-2xl font-bold text-white mb-8">PlanB en chiffres</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div>
-                            <p className="text-3xl font-bold text-orange-500">10K+</p>
-                            <p className="text-gray-400 text-sm">Utilisateurs actifs</p>
+                {/* Ce qui nous différencie */}
+                <section className="mb-12">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-6">Ce qui nous différencie</h2>
+                    <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
+                        <div className="space-y-6">
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Check className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-900 mb-2">Adapté à l'Afrique</h3>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        Nous comprenons les réalités du marché africain : moyens de paiement locaux (Wave, Orange Money, MTN Mobile Money), 
+                                        langues multiples, connexions variables, et besoins spécifiques de chaque pays.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Check className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-900 mb-2">Gratuit et Accessible</h3>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        L'inscription et la publication d'annonces de base sont entièrement gratuites. 
+                                        Nous croyons que l'accès aux opportunités économiques ne doit pas être un privilège, 
+                                        mais un droit pour tous.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Check className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-900 mb-2">Support Multilingue</h3>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        Notre plateforme est disponible en français, anglais, et bientôt dans d'autres langues 
+                                        africaines. Nous nous adaptons à nos utilisateurs, pas l'inverse.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Check className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-900 mb-2">Interface Moderne</h3>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        Une interface intuitive, rapide et responsive, accessible depuis n'importe quel appareil. 
+                                        Que vous utilisiez un smartphone basique ou un ordinateur dernier cri, PlanB fonctionne parfaitement.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-3xl font-bold text-orange-500">5K+</p>
-                            <p className="text-gray-400 text-sm">Annonces publiées</p>
-                        </div>
-                        <div>
-                            <p className="text-3xl font-bold text-orange-500">15+</p>
-                            <p className="text-gray-400 text-sm">Pays couverts</p>
-                        </div>
-                        <div>
-                            <p className="text-3xl font-bold text-orange-500">98%</p>
-                            <p className="text-gray-400 text-sm">Satisfaction client</p>
-                        </div>
+                    </div>
+                </section>
+
+
+                {/* Contact */}
+                <section className="bg-white rounded-2xl shadow-sm p-6 md:p-8 text-center">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Rejoignez-nous</h2>
+                    <p className="text-gray-600 leading-relaxed mb-6">
+                        Vous avez des questions, des suggestions ou souhaitez nous rejoindre ? Nous serions ravis d'échanger avec vous.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a 
+                            href="/contact" 
+                            className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                        >
+                            Nous contacter
+                        </a>
+                        <a 
+                            href="/publish" 
+                            className="px-6 py-3 border-2 border-orange-500 text-orange-500 rounded-lg font-medium hover:bg-orange-50 transition-colors"
+                        >
+                            Publier une annonce
+                        </a>
                     </div>
                 </section>
             </div>
@@ -7879,93 +8304,311 @@ function TermsPage() {
             {/* Hero */}
             <div className="bg-gradient-to-br from-purple-500 to-purple-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-4">Conditions d'utilisation</h1>
-                    <p className="text-white/90 text-lg">Dernière mise à jour : Janvier 2026</p>
+                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Conditions d'utilisation</h1>
+                    <p className="text-white/90 text-lg md:text-xl">Dernière mise à jour : Janvier 2026</p>
                 </div>
             </div>
 
             <div className="max-w-4xl mx-auto px-4 py-12">
-                <div className="bg-white rounded-2xl shadow-sm p-8">
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">1. Acceptation des conditions</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            En accédant et en utilisant la plateforme PlanB, vous acceptez d'être lié par les présentes conditions d'utilisation. 
-                            Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre service.
+                <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 space-y-8">
+                    {/* Introduction */}
+                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                        <p className="text-gray-700 leading-relaxed">
+                            <strong>Bienvenue sur PlanB !</strong> En utilisant notre plateforme, vous acceptez les présentes conditions d'utilisation. 
+                            Nous vous invitons à les lire attentivement. Si vous n'acceptez pas ces conditions, 
+                            veuillez ne pas utiliser notre service.
                         </p>
-                    </section>
+                    </div>
 
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">2. Description du service</h2>
-                        <p className="text-gray-600 leading-relaxed mb-4">
-                            PlanB est une plateforme de petites annonces en ligne permettant aux utilisateurs de :
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Acceptation des conditions</h2>
+                        <p className="text-gray-700 leading-relaxed mb-3">
+                            En accédant et en utilisant la plateforme PlanB (ci-après "la Plateforme"), vous reconnaissez avoir lu, 
+                            compris et accepté d'être lié par les présentes conditions d'utilisation (ci-après "les Conditions"). 
+                            Ces Conditions constituent un accord légal entre vous et PlanB.
                         </p>
-                        <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
-                            <li>Publier des annonces de vente, location ou services</li>
-                            <li>Rechercher et consulter des annonces</li>
-                            <li>Contacter d'autres utilisateurs</li>
-                            <li>Gérer leur profil et leurs annonces</li>
-                        </ul>
-                    </section>
-
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">3. Inscription et compte</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            Pour publier une annonce, vous devez créer un compte avec des informations exactes et à jour. 
-                            Vous êtes responsable de la confidentialité de vos identifiants de connexion et de toutes les activités 
-                            effectuées sous votre compte.
-                        </p>
-                    </section>
-
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">4. Règles de publication</h2>
-                        <p className="text-gray-600 leading-relaxed mb-4">Les annonces publiées doivent :</p>
-                        <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
-                            <li>Être légales et conformes aux lois en vigueur</li>
-                            <li>Contenir des informations véridiques et exactes</li>
-                            <li>Ne pas porter atteinte aux droits de tiers</li>
-                            <li>Ne pas contenir de contenu offensant, discriminatoire ou illégal</li>
-                        </ul>
-                    </section>
-
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">5. Responsabilités</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            PlanB agit en tant qu'intermédiaire et n'est pas partie aux transactions entre utilisateurs. 
-                            Nous ne garantissons pas la qualité, la sécurité ou la légalité des articles annoncés, 
-                            ni la capacité des vendeurs à vendre ou des acheteurs à acheter.
-                        </p>
-                    </section>
-
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">6. Propriété intellectuelle</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            Tous les contenus de la plateforme (logos, textes, images, code) sont la propriété de PlanB 
-                            ou de ses partenaires et sont protégés par les lois sur la propriété intellectuelle.
-                        </p>
-                    </section>
-
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">7. Protection des données</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            Vos données personnelles sont traitées conformément à notre politique de confidentialité. 
-                            Nous nous engageons à protéger vos informations et à les utiliser uniquement dans le cadre 
-                            de nos services.
-                        </p>
-                    </section>
-
-                    <section className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">8. Modifications</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            Nous nous réservons le droit de modifier ces conditions à tout moment. 
-                            Les modifications entrent en vigueur dès leur publication sur la plateforme.
+                        <p className="text-gray-700 leading-relaxed">
+                            Si vous n'acceptez pas ces Conditions dans leur intégralité, vous ne devez pas accéder à la Plateforme 
+                            ni utiliser nos services. Votre utilisation de la Plateforme implique votre acceptation sans réserve 
+                            de ces Conditions.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">9. Contact</h2>
-                        <p className="text-gray-600 leading-relaxed">
-                            Pour toute question concernant ces conditions, veuillez nous contacter à : 
-                            <a href="mailto:legal@planb-africa.com" className="text-orange-500 hover:underline ml-1">legal@planb-africa.com</a>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Description du service</h2>
+                        <p className="text-gray-700 leading-relaxed mb-4">
+                            PlanB est une plateforme de petites annonces en ligne permettant aux utilisateurs de :
+                        </p>
+                        <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
+                            <li>Publier des annonces de vente, location ou services dans diverses catégories (immobilier, véhicules, vacances, etc.)</li>
+                            <li>Rechercher et consulter des annonces selon différents critères (localisation, prix, catégorie, etc.)</li>
+                            <li>Contacter d'autres utilisateurs via notre système de messagerie intégré</li>
+                            <li>Gérer leur profil utilisateur et leurs annonces publiées</li>
+                            <li>Effectuer des réservations et des paiements sécurisés pour certains types d'annonces</li>
+                            <li>Bénéficier de fonctionnalités avancées avec un compte PRO (visites virtuelles 360°, statistiques, etc.)</li>
+                        </ul>
+                        <p className="text-gray-700 leading-relaxed">
+                            PlanB se réserve le droit de modifier, suspendre ou interrompre tout ou partie de la Plateforme 
+                            à tout moment, avec ou sans préavis.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Inscription et compte utilisateur</h2>
+                        <div className="space-y-3">
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>3.1 Création de compte :</strong> Pour publier une annonce ou accéder à certaines fonctionnalités, 
+                                vous devez créer un compte. Vous vous engagez à fournir des informations exactes, complètes et à jour. 
+                                Vous êtes responsable de maintenir la confidentialité de vos identifiants de connexion.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>3.2 Responsabilité du compte :</strong> Vous êtes entièrement responsable de toutes les activités 
+                                effectuées sous votre compte. Vous devez immédiatement nous notifier de toute utilisation non autorisée 
+                                de votre compte ou de toute violation de sécurité.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>3.3 Âge minimum :</strong> Vous devez avoir au moins 18 ans pour créer un compte sur PlanB. 
+                                Si vous avez entre 13 et 17 ans, vous pouvez utiliser la Plateforme uniquement avec le consentement 
+                                et sous la supervision d'un parent ou tuteur légal.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>3.4 Comptes multiples :</strong> La création de plusieurs comptes pour contourner les restrictions 
+                                ou les sanctions est strictement interdite et peut entraîner la fermeture de tous vos comptes.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Règles de publication d'annonces</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">4.1 Contenu autorisé</h3>
+                                <p className="text-gray-700 leading-relaxed mb-2">Les annonces publiées doivent :</p>
+                                <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Être légales et conformes aux lois en vigueur dans votre pays et dans le pays où l'annonce est visible</li>
+                                    <li>Contenir des informations véridiques, exactes et à jour</li>
+                                    <li>Concerner des biens ou services que vous êtes autorisé à vendre, louer ou proposer</li>
+                                    <li>Respecter les droits de propriété intellectuelle et les droits de tiers</li>
+                                    <li>Être classées dans la catégorie appropriée</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">4.2 Contenu interdit</h3>
+                                <p className="text-gray-700 leading-relaxed mb-2">Il est strictement interdit de publier des annonces contenant :</p>
+                                <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Des produits ou services illégaux (drogues, armes, contrefaçons, etc.)</li>
+                                    <li>Du contenu offensant, discriminatoire, diffamatoire ou haineux</li>
+                                    <li>Des informations trompeuses, frauduleuses ou mensongères</li>
+                                    <li>Du contenu à caractère pornographique ou violent</li>
+                                    <li>Des annonces de recrutement pour des activités illégales ou frauduleuses</li>
+                                    <li>Des liens vers des sites externes non autorisés</li>
+                                    <li>Des coordonnées dans le titre ou la description (pour des raisons de sécurité)</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">4.3 Photos et médias</h3>
+                                <p className="text-gray-700 leading-relaxed">
+                                    Les photos doivent représenter fidèlement le bien ou service annoncé. L'utilisation de photos 
+                                    volées, modifiées de manière trompeuse ou ne correspondant pas au bien est interdite. 
+                                    Vous garantissez avoir le droit d'utiliser toutes les photos publiées.
+                                </p>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">4.4 Modération</h3>
+                                <p className="text-gray-700 leading-relaxed">
+                                    PlanB se réserve le droit de modérer, modifier, suspendre ou supprimer toute annonce qui ne 
+                                    respecte pas ces règles, sans préavis ni remboursement. Les décisions de modération sont 
+                                    définitives et sans appel.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Transactions et responsabilités</h2>
+                        <div className="space-y-3">
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>5.1 Rôle de PlanB :</strong> PlanB agit uniquement en tant qu'intermédiaire technique 
+                                mettant en relation vendeurs et acheteurs. Nous ne sommes pas partie aux transactions entre utilisateurs 
+                                et n'intervenons pas dans les négociations, les accords ou les litiges entre utilisateurs.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>5.2 Garanties :</strong> PlanB ne garantit pas la qualité, la sécurité, la légalité, 
+                                l'authenticité ou la disponibilité des biens ou services annoncés. Nous ne garantissons pas non plus 
+                                la capacité des vendeurs à vendre ou des acheteurs à acheter, ni l'exactitude des informations 
+                                communiquées par les utilisateurs.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>5.3 Responsabilité des utilisateurs :</strong> Chaque utilisateur est seul responsable de ses 
+                                transactions. Nous vous recommandons fortement de :
+                            </p>
+                            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4 mb-3">
+                                <li>Vérifier l'identité de votre interlocuteur</li>
+                                <li>Inspecter les biens avant tout paiement</li>
+                                <li>Vérifier les documents légaux (titres de propriété, cartes grises, etc.)</li>
+                                <li>Utiliser notre système de paiement sécurisé lorsqu'il est disponible</li>
+                                <li>Signaler tout comportement suspect</li>
+                            </ul>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>5.4 Paiements :</strong> Les paiements effectués via notre plateforme sont traités par des 
+                                prestataires de paiement tiers sécurisés. PlanB ne stocke pas vos informations bancaires. 
+                                En cas de litige lié à un paiement, vous devez contacter directement le prestataire de paiement.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Propriété intellectuelle</h2>
+                        <div className="space-y-3">
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>6.1 Contenu de PlanB :</strong> Tous les contenus de la Plateforme (logos, textes, images, 
+                                code source, design, marques) sont la propriété exclusive de PlanB ou de ses partenaires et sont 
+                                protégés par les lois sur la propriété intellectuelle. Toute reproduction, distribution ou utilisation 
+                                non autorisée est strictement interdite.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>6.2 Contenu des utilisateurs :</strong> En publiant du contenu sur PlanB, vous accordez à 
+                                PlanB une licence non exclusive, mondiale, gratuite et transférable pour utiliser, reproduire, 
+                                modifier et afficher ce contenu sur la Plateforme et dans le cadre de nos services. Vous conservez 
+                                tous vos droits de propriété sur votre contenu.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>6.3 Respect des droits tiers :</strong> Vous garantissez que le contenu que vous publiez ne 
+                                viole aucun droit de propriété intellectuelle, droit à l'image ou autre droit de tiers. En cas de 
+                                réclamation, vous vous engagez à indemniser PlanB de tous préjudices résultant d'une telle violation.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Protection des données personnelles</h2>
+                        <p className="text-gray-700 leading-relaxed mb-3">
+                            Le traitement de vos données personnelles est régi par notre <strong>Politique de Confidentialité</strong>, 
+                            qui fait partie intégrante des présentes Conditions. En utilisant PlanB, vous acceptez également notre 
+                            Politique de Confidentialité.
+                        </p>
+                        <p className="text-gray-700 leading-relaxed">
+                            Nous nous engageons à protéger vos données personnelles conformément au Règlement Général sur la Protection 
+                            des Données (RGPD) et aux lois locales applicables. Vos données sont utilisées uniquement dans le cadre 
+                            de nos services et ne sont jamais vendues à des tiers à des fins commerciales.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Compte PRO et services payants</h2>
+                        <div className="space-y-3">
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>8.1 Abonnement PRO :</strong> PlanB propose des abonnements PRO offrant des fonctionnalités 
+                                avancées (annonces illimitées, visites virtuelles 360°, statistiques détaillées, badge PRO, etc.). 
+                                Les tarifs et fonctionnalités sont indiqués sur la page d'abonnement.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>8.2 Paiement :</strong> Les abonnements sont facturés à l'avance selon la période choisie 
+                                (mensuel, trimestriel, annuel). Le paiement est effectué via nos prestataires de paiement sécurisés 
+                                (Wave, Orange Money, MTN Mobile Money, cartes bancaires).
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>8.3 Renouvellement :</strong> Les abonnements se renouvellent automatiquement à la fin de 
+                                chaque période, sauf résiliation de votre part. Vous pouvez résilier votre abonnement à tout moment 
+                                depuis votre profil.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>8.4 Remboursement :</strong> Conformément à la législation en vigueur, vous disposez d'un 
+                                droit de rétractation de 14 jours à compter de la souscription. Passé ce délai, aucun remboursement 
+                                ne sera effectué pour les abonnements en cours.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Suspension et résiliation</h2>
+                        <div className="space-y-3">
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>9.1 Par l'utilisateur :</strong> Vous pouvez supprimer votre compte à tout moment depuis 
+                                les paramètres de votre profil. La suppression de votre compte entraîne la suppression définitive 
+                                de toutes vos données personnelles, conformément à notre Politique de Confidentialité.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>9.2 Par PlanB :</strong> Nous nous réservons le droit de suspendre ou résilier votre compte 
+                                et votre accès à la Plateforme, sans préavis ni remboursement, en cas de :
+                            </p>
+                            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4 mb-3">
+                                <li>Violation des présentes Conditions</li>
+                                <li>Publication de contenu illégal ou interdit</li>
+                                <li>Comportement frauduleux ou suspect</li>
+                                <li>Non-respect des règles de la communauté</li>
+                                <li>Utilisation abusive de la Plateforme</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Limitation de responsabilité</h2>
+                        <p className="text-gray-700 leading-relaxed mb-3">
+                            Dans les limites autorisées par la loi, PlanB ne pourra en aucun cas être tenu responsable de :
+                        </p>
+                        <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4 mb-3">
+                            <li>Dommages directs, indirects, accessoires ou consécutifs résultant de l'utilisation ou de l'impossibilité d'utiliser la Plateforme</li>
+                            <li>Pertes de données, de revenus, de profits ou d'opportunités commerciales</li>
+                            <li>Transactions frauduleuses ou litiges entre utilisateurs</li>
+                            <li>Interruptions, bugs, erreurs ou dysfonctionnements de la Plateforme</li>
+                            <li>Actes de tiers (piratage, virus, etc.)</li>
+                        </ul>
+                        <p className="text-gray-700 leading-relaxed">
+                            Notre responsabilité est limitée au montant que vous avez payé pour nos services au cours des 12 derniers mois, 
+                            dans la mesure où une telle limitation est autorisée par la loi.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Modifications des conditions</h2>
+                        <p className="text-gray-700 leading-relaxed">
+                            PlanB se réserve le droit de modifier ces Conditions à tout moment. Les modifications entrent en vigueur 
+                            dès leur publication sur la Plateforme. Nous vous informerons des modifications importantes par email 
+                            ou via une notification sur la Plateforme. Votre utilisation continue de la Plateforme après la publication 
+                            des modifications constitue votre acceptation des nouvelles Conditions.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Droit applicable et juridiction</h2>
+                        <p className="text-gray-700 leading-relaxed">
+                            Les présentes Conditions sont régies par les lois en vigueur dans votre pays de résidence. 
+                            En cas de litige, et après tentative de résolution amiable, les tribunaux compétents de votre pays 
+                            seront seuls compétents.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">13. Dispositions générales</h2>
+                        <div className="space-y-3">
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>13.1 Intégralité :</strong> Les présentes Conditions, ainsi que notre Politique de Confidentialité, 
+                                constituent l'intégralité de l'accord entre vous et PlanB concernant l'utilisation de la Plateforme.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>13.2 Divisibilité :</strong> Si une disposition des présentes Conditions est jugée invalide ou 
+                                inapplicable, les autres dispositions demeureront en vigueur.
+                            </p>
+                            <p className="text-gray-700 leading-relaxed">
+                                <strong>13.3 Non-renonciation :</strong> Le fait que PlanB ne se prévale pas d'une disposition des 
+                                présentes Conditions ne constitue pas une renonciation à ce droit.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section className="bg-gray-50 rounded-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">14. Contact</h2>
+                        <p className="text-gray-700 leading-relaxed mb-4">
+                            Pour toute question, réclamation ou demande concernant ces Conditions d'utilisation, vous pouvez nous contacter :
+                        </p>
+                        <div className="space-y-2 text-gray-700">
+                            <p><strong>Email :</strong> <a href="mailto:legal@planb-africa.com" className="text-orange-500 hover:underline">legal@planb-africa.com</a></p>
+                            <p><strong>Support :</strong> <a href="/contact" className="text-orange-500 hover:underline">Formulaire de contact</a></p>
+                            <p><strong>Adresse :</strong> PlanB, Côte d'Ivoire</p>
+                        </div>
+                        <p className="text-gray-600 text-sm mt-4 italic">
+                            Nous nous engageons à répondre à toutes vos demandes dans les meilleurs délais.
                         </p>
                     </section>
                 </div>
@@ -8014,6 +8657,11 @@ function AppContent() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                {/* Routes de paiement */}
+                <Route path="/payment/wave" element={<WavePayment />} />
+                <Route path="/payment/orange-money" element={<OrangeMoneyPayment />} />
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/cancel" element={<PaymentCancel />} />
                 <Route path="*" element={<HomePage />} />
             </Routes>
         </>

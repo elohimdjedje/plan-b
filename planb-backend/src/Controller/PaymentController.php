@@ -270,6 +270,18 @@ class PaymentController extends AbstractController
                 ];
 
             case 'orange_money':
+                // Essayer d'abord le paiement direct (Cash-out)
+                if ($phone) {
+                    $result = $this->orangeMoneyService->initiateDirectPayment($phone, $amount, $orderId);
+                    if (!isset($result['error'])) {
+                        return [
+                            'transaction_id' => $result['transaction_id'] ?? null,
+                            'message' => 'Demande de paiement Orange Money envoyée. Veuillez confirmer sur votre téléphone.'
+                        ];
+                    }
+                }
+                
+                // Fallback: Générer un QR Code ou lien de paiement
                 $result = $this->orangeMoneyService->generatePaymentLink($amount, $orderId, $phone);
                 if (isset($result['error'])) {
                     return $result;
@@ -277,7 +289,10 @@ class PaymentController extends AbstractController
                 return [
                     'transaction_id' => $result['payment_token'] ?? null,
                     'payment_url' => $result['payment_url'] ?? null,
-                    'message' => 'Veuillez confirmer le paiement Orange Money sur votre téléphone'
+                    'qr_code' => $result['qr_code'] ?? null,
+                    'message' => $result['qr_code'] 
+                        ? 'Scannez le QR Code avec votre application Orange Money'
+                        : 'Veuillez confirmer le paiement Orange Money sur votre téléphone'
                 ];
 
             case 'mtn_money':
